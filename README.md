@@ -26,4 +26,4 @@ Kat is a feline lifeform, with the instincts, personality, and quirks of a playf
 
 - **Controller Tracking**
 - **Spatial Audio**
-- **VR Interactions**
+- **VR Interactions**: Interact with Kat. Scratch it, feed it, or just watch it explore. Command it to do tricks using simple controller gestures.
