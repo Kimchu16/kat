@@ -1,10 +1,11 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="PackedScene" path="res://models/kat_textured_v1.glb" id="1_kat"]
 [ext_resource type="PackedScene" path="res://models/pillow_low_poly.glb" id="2_pillow"]
 [ext_resource type="PackedScene" path="res://models/bowl_of_food_for_cat.glb" id="3_bowl"]
 [ext_resource type="PackedScene" path="res://models/fish.glb" id="4_fish"]
 [ext_resource type="PackedScene" path="res://models/low_poly_footballsoccer_ball.glb" id="5_ball"]
+[ext_resource type="PackedScene" path="res://scenes/quest_vr_player.tscn" id="6_vr_player"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 2
@@ -84,9 +85,12 @@ shadow_enabled = true
 [node name="PreviewCamera" type="Camera3D" parent="."]
 position = Vector3(0, 2.15, 5.7)
 rotation_degrees = Vector3(-12, 180, 0)
-current = true
+current = false
 
 [node name="PlayerSpawn" type="Marker3D" parent="."]
+position = Vector3(0, 0, 2.6)
+
+[node name="QuestVRPlayer" parent="." instance=ExtResource("6_vr_player")]
 position = Vector3(0, 0, 2.6)
 
 [node name="KatSpawn" type="Marker3D" parent="."]
