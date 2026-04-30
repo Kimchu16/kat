@@ -1,0 +1,58 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/xr/start_xr.tscn" id="1_start_xr"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/misc/vr_common_shader_cache.tscn" id="2_shader_cache"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/left_hand_low.tscn" id="3_left_hand"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/right_hand_low.tscn" id="4_right_hand"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/function_pointer.tscn" id="5_pointer"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/function_pickup.tscn" id="6_pickup"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_direct.tscn" id="7_move"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_turn.tscn" id="8_turn"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/effects/fade.tscn" id="9_fade"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/player/fade/fade_collision.tscn" id="10_fade_collision"]
+
+[node name="QuestVRPlayer" type="Node3D"]
+
+[node name="StartXR" parent="." instance=ExtResource("1_start_xr")]
+target_refresh_rate = 90.0
+
+[node name="Fade" parent="." instance=ExtResource("9_fade")]
+
+[node name="XROrigin3D" type="XROrigin3D" parent="."]
+current = true
+
+[node name="XRCamera3D" type="XRCamera3D" parent="XROrigin3D"]
+position = Vector3(0, 1.7, 0)
+current = true
+near = 0.05
+far = 24.0
+
+[node name="VRCommonShaderCache" parent="XROrigin3D/XRCamera3D" instance=ExtResource("2_shader_cache")]
+
+[node name="FadeCollision" parent="XROrigin3D/XRCamera3D" instance=ExtResource("10_fade_collision")]
+
+[node name="LeftHandController" type="XRController3D" parent="XROrigin3D"]
+position = Vector3(-0.35, 1.1, -0.45)
+tracker = &"left_hand"
+pose = &"aim"
+
+[node name="LeftHand" parent="XROrigin3D/LeftHandController" instance=ExtResource("3_left_hand")]
+
+[node name="Pointer" parent="XROrigin3D/LeftHandController" instance=ExtResource("5_pointer")]
+
+[node name="Pickup" parent="XROrigin3D/LeftHandController" instance=ExtResource("6_pickup")]
+
+[node name="MovementDirect" parent="XROrigin3D/LeftHandController" instance=ExtResource("7_move")]
+
+[node name="RightHandController" type="XRController3D" parent="XROrigin3D"]
+position = Vector3(0.35, 1.1, -0.45)
+tracker = &"right_hand"
+pose = &"aim"
+
+[node name="RightHand" parent="XROrigin3D/RightHandController" instance=ExtResource("4_right_hand")]
+
+[node name="Pointer" parent="XROrigin3D/RightHandController" instance=ExtResource("5_pointer")]
+
+[node name="Pickup" parent="XROrigin3D/RightHandController" instance=ExtResource("6_pickup")]
+
+[node name="MovementTurn" parent="XROrigin3D/RightHandController" instance=ExtResource("8_turn")]
