@@ -1,0 +1,177 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="PackedScene" path="res://models/kat_textured_v1.glb" id="1_kat"]
+[ext_resource type="PackedScene" path="res://models/pillow_low_poly.glb" id="2_pillow"]
+[ext_resource type="PackedScene" path="res://models/bowl_of_food_for_cat.glb" id="3_bowl"]
+[ext_resource type="PackedScene" path="res://models/fish.glb" id="4_fish"]
+[ext_resource type="PackedScene" path="res://models/low_poly_footballsoccer_ball.glb" id="5_ball"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+background_color = Color(0.823529, 0.890196, 0.933333, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 0.972549, 0.921569, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.733333, 0.639216, 0.529412, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.886275, 0.941176, 0.917647, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ceiling"]
+albedo_color = Color(0.980392, 0.964706, 0.933333, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(8, 0.2, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ns"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(8, 3.2, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ew"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(0.2, 3.2, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ceiling"]
+material = SubResource("StandardMaterial3D_ceiling")
+size = Vector3(8, 0.2, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(8, 0.2, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
+size = Vector3(8, 3.2, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
+size = Vector3(0.2, 3.2, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ceiling"]
+size = Vector3(8, 0.2, 8)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rug"]
+top_radius = 1.1
+bottom_radius = 1.1
+height = 0.04
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rug"]
+albedo_color = Color(0.913725, 0.682353, 0.564706, 1)
+roughness = 0.95
+
+[node name="KatRoom" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+position = Vector3(0, 3, 0)
+rotation_degrees = Vector3(-48, -28, 0)
+light_color = Color(1, 0.956863, 0.878431, 1)
+light_energy = 1.6
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+position = Vector3(-2.5, 2.2, -2)
+light_color = Color(1, 0.878431, 0.776471, 1)
+light_energy = 1.2
+omni_range = 10.0
+shadow_enabled = true
+
+[node name="PreviewCamera" type="Camera3D" parent="."]
+position = Vector3(0, 2.15, 5.7)
+rotation_degrees = Vector3(-12, 180, 0)
+current = true
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+position = Vector3(0, 0, 2.6)
+
+[node name="KatSpawn" type="Marker3D" parent="."]
+position = Vector3(0, 0, 0.2)
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="NorthWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.5, -4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NorthWall"]
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthWall"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="SouthWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.5, 4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SouthWall"]
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SouthWall"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WestWall" type="StaticBody3D" parent="."]
+position = Vector3(-4, 1.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WestWall"]
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WestWall"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="EastWall" type="StaticBody3D" parent="."]
+position = Vector3(4, 1.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EastWall"]
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EastWall"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="Ceiling" type="StaticBody3D" parent="."]
+position = Vector3(0, 3.1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ceiling"]
+mesh = SubResource("BoxMesh_ceiling")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ceiling"]
+shape = SubResource("BoxShape3D_ceiling")
+
+[node name="PlayRug" type="MeshInstance3D" parent="."]
+position = Vector3(0.9, 0.02, 1.1)
+mesh = SubResource("CylinderMesh_rug")
+surface_material_override/0 = SubResource("StandardMaterial3D_rug")
+
+[node name="Pillow" parent="." instance=ExtResource("2_pillow")]
+position = Vector3(-1.85, 0.08, -1.9)
+rotation_degrees = Vector3(0, 30, 0)
+scale = Vector3(0.08, 0.08, 0.08)
+
+[node name="FoodBowl" parent="." instance=ExtResource("3_bowl")]
+position = Vector3(1.75, 0.08, -1.75)
+rotation_degrees = Vector3(0, -20, 0)
+scale = Vector3(0.16, 0.16, 0.16)
+
+[node name="FishTreat" parent="." instance=ExtResource("4_fish")]
+position = Vector3(1.9, 0.16, -1.3)
+rotation_degrees = Vector3(0, 35, -12)
+scale = Vector3(0.32, 0.32, 0.32)
+
+[node name="ToyBall" parent="." instance=ExtResource("5_ball")]
+position = Vector3(0.95, 0.12, 1.1)
+rotation_degrees = Vector3(0, 12, 0)
+scale = Vector3(0.12, 0.12, 0.12)
+
+[node name="Kat" parent="." instance=ExtResource("1_kat")]
+position = Vector3(-0.2, 0.03, 0.25)
+rotation_degrees = Vector3(0, 135, 0)
+scale = Vector3(1.6, 1.6, 1.6)
