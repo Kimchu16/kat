@@ -1,15 +1,16 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3 uid="uid://du6x4vb23erxs"]
 
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/xr/start_xr.tscn" id="1_start_xr"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/misc/vr_common_shader_cache.tscn" id="2_shader_cache"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/left_hand_low.tscn" id="3_left_hand"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/right_hand_low.tscn" id="4_right_hand"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/function_pointer.tscn" id="5_pointer"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/function_pickup.tscn" id="6_pickup"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_direct.tscn" id="7_move"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_turn.tscn" id="8_turn"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/effects/fade.tscn" id="9_fade"]
-[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/player/fade/fade_collision.tscn" id="10_fade_collision"]
+[ext_resource type="PackedScene" uid="uid://clc5dre31iskm" path="res://addons/godot-xr-tools/xr/start_xr.tscn" id="1_start_xr"]
+[ext_resource type="PackedScene" uid="uid://btknduttnmoxf" path="res://addons/godot-xr-tools/misc/vr_common_shader_cache.tscn" id="2_shader_cache"]
+[ext_resource type="PackedScene" uid="uid://b4kad2kuba1yn" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/left_hand_low.tscn" id="3_left_hand"]
+[ext_resource type="PackedScene" uid="uid://l2n30mpbkdyw" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/right_hand_low.tscn" id="4_right_hand"]
+[ext_resource type="PackedScene" uid="uid://cqhw276realc" path="res://addons/godot-xr-tools/functions/function_pointer.tscn" id="5_pointer"]
+[ext_resource type="PackedScene" uid="uid://b4ysuy43poobf" path="res://addons/godot-xr-tools/functions/function_pickup.tscn" id="6_pickup"]
+[ext_resource type="PackedScene" uid="uid://bl2nuu3qhlb5k" path="res://addons/godot-xr-tools/functions/movement_direct.tscn" id="7_move"]
+[ext_resource type="PackedScene" uid="uid://b6bk2pj8vbj28" path="res://addons/godot-xr-tools/functions/movement_turn.tscn" id="8_turn"]
+[ext_resource type="PackedScene" uid="uid://wtpox7m5vu2b" path="res://addons/godot-xr-tools/effects/fade.tscn" id="9_fade"]
+[ext_resource type="PackedScene" uid="uid://b228p8k6sonve" path="res://addons/godot-xr-tools/player/fade/fade_collision.tscn" id="10_fade_collision"]
+[ext_resource type="PackedScene" uid="uid://diyu06cw06syv" path="res://addons/godot-xr-tools/player/player_body.tscn" id="11_player_body"]
 
 [node name="QuestVRPlayer" type="Node3D"]
 
@@ -21,10 +22,11 @@ target_refresh_rate = 90.0
 [node name="XROrigin3D" type="XROrigin3D" parent="."]
 current = true
 
+[node name="PlayerBody" parent="XROrigin3D" instance=ExtResource("11_player_body")]
+
 [node name="XRCamera3D" type="XRCamera3D" parent="XROrigin3D"]
-position = Vector3(0, 1.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 current = true
-near = 0.05
 far = 24.0
 
 [node name="VRCommonShaderCache" parent="XROrigin3D/XRCamera3D" instance=ExtResource("2_shader_cache")]
@@ -32,7 +34,7 @@ far = 24.0
 [node name="FadeCollision" parent="XROrigin3D/XRCamera3D" instance=ExtResource("10_fade_collision")]
 
 [node name="LeftHandController" type="XRController3D" parent="XROrigin3D"]
-position = Vector3(-0.35, 1.1, -0.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.1, -0.45)
 tracker = &"left_hand"
 pose = &"aim"
 
@@ -45,7 +47,7 @@ pose = &"aim"
 [node name="MovementDirect" parent="XROrigin3D/LeftHandController" instance=ExtResource("7_move")]
 
 [node name="RightHandController" type="XRController3D" parent="XROrigin3D"]
-position = Vector3(0.35, 1.1, -0.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 1.1, -0.45)
 tracker = &"right_hand"
 pose = &"aim"
 
