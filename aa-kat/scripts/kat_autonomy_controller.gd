@@ -10,15 +10,17 @@ extends Node3D
 @export var min_decision_time: float = 4.0
 @export var max_decision_time: float = 8.5
 @export var show_debug_label: bool = true
+@export_range(-180.0, 180.0, 1.0) var model_forward_yaw_offset_degrees: float = 90.0
 
 const ACTION_ANIMATIONS: Dictionary = {
 	&"idle": &"Idle",
-	&"eat": &"Sit",
+	&"eat": &"Eat",
 	&"rest": &"Sleep",
 	&"play": &"Pounce",
 	&"explore": &"Run",
 }
 
+const LOCOMOTION_ANIMATION: StringName = &"Run"
 const ATTENTION_ANIMATION: StringName = &"AttentionCaught"
 const HOLD_POSE_TIMES: Dictionary = {
 	&"Sleep": 1.8666667,
@@ -35,6 +37,7 @@ var _pounce_hitbox: Area3D
 var _debug_label: Label3D
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
+var _has_reached_target: bool = true
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -55,19 +58,27 @@ func _process(delta: float) -> void:
 		return
 
 	needs.tick(delta)
-	_hold_pose_animation()
-	_decision_timer -= delta
 
 	if _target_node == null:
+		_hold_pose_animation()
+		_decision_timer -= delta
 		if _decision_timer <= 0.0:
 			_choose_next_state()
 		return
 
-	var arrived: bool = _move_towards_target(delta)
-	if arrived:
-		_apply_arrival_effects(delta)
+	if not _has_reached_target:
+		var arrived: bool = _move_towards_target(delta)
+		if arrived:
+			_has_reached_target = true
+			_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
+			_play_state_animation()
+			_apply_arrival_effects(delta)
+		return
 
-	if _decision_timer <= 0.0 and (arrived or current_state == &"idle"):
+	_hold_pose_animation()
+	_apply_arrival_effects(delta)
+	_decision_timer -= delta
+	if _decision_timer <= 0.0:
 		_choose_next_state()
 
 
@@ -104,8 +115,13 @@ func _choose_next_state() -> void:
 	current_state = selected_state
 	_target_node = _get_target_for_action(current_state)
 	_pounce_impulse_sent = false
-	_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
-	_play_state_animation()
+	_has_reached_target = _target_node == null
+	if _has_reached_target:
+		_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
+		_play_state_animation()
+	else:
+		_decision_timer = 0.0
+		_play_locomotion_animation()
 	_update_debug_label(needs.snapshot())
 
 
@@ -175,7 +191,8 @@ func _face_direction(direction: Vector3, delta: float) -> void:
 	if direction.length_squared() < 0.001:
 		return
 
-	var target_yaw: float = atan2(direction.x, direction.z)
+	var model_forward_offset: float = deg_to_rad(model_forward_yaw_offset_degrees)
+	var target_yaw: float = atan2(-direction.x, -direction.z) + model_forward_offset
 	rotation.y = lerp_angle(rotation.y, target_yaw, min(turn_speed * delta, 1.0))
 
 
@@ -221,7 +238,7 @@ func _push_ball(ball: RigidBody3D) -> void:
 	var impulse_direction: Vector3 = ball.global_position - global_position
 	impulse_direction.y = 0.08
 	if impulse_direction.length_squared() < 0.001:
-		impulse_direction = -global_transform.basis.z + Vector3.UP * 0.08
+		impulse_direction = _get_visual_forward_direction() + Vector3.UP * 0.08
 
 	ball.apply_central_impulse(impulse_direction.normalized() * pounce_impulse)
 
@@ -251,6 +268,24 @@ func _play_state_animation() -> void:
 	var animation_name: StringName = ACTION_ANIMATIONS.get(current_state, &"Idle") as StringName
 	if _animation_player.has_animation(animation_name):
 		_animation_player.play(animation_name, 0.2)
+
+
+func _play_locomotion_animation() -> void:
+	if _animation_player == null:
+		return
+
+	if _animation_player.has_animation(LOCOMOTION_ANIMATION):
+		if StringName(_animation_player.current_animation) != LOCOMOTION_ANIMATION or not _animation_player.is_playing():
+			_animation_player.play(LOCOMOTION_ANIMATION, 0.15)
+
+
+func _get_visual_forward_direction() -> Vector3:
+	var forward: Vector3 = global_transform.basis.x
+	forward.y = 0.0
+	if forward.length_squared() < 0.001:
+		return Vector3.FORWARD
+
+	return forward.normalized()
 
 
 func _hold_pose_animation() -> void:
