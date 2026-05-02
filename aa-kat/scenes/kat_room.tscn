@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="PackedScene" path="res://models/kat_textured_v1.glb" id="1_kat"]
 [ext_resource type="PackedScene" path="res://models/pillow_low_poly.glb" id="2_pillow"]
@@ -62,6 +62,26 @@ height = 0.04
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rug"]
 albedo_color = Color(0.913725, 0.682353, 0.564706, 1)
 roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sofa"]
+albedo_color = Color(0.560784, 0.321569, 0.247059, 1)
+roughness = 0.88
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
+albedo_color = Color(0.282353, 0.184314, 0.121569, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shelf_books"]
+albedo_color = Color(0.74902, 0.513725, 0.352941, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scratch_post"]
+albedo_color = Color(0.662745, 0.572549, 0.431373, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cat_tree_fabric"]
+albedo_color = Color(0.423529, 0.490196, 0.462745, 1)
+roughness = 0.96
 
 [node name="KatRoom" type="Node3D"]
 
@@ -154,6 +174,138 @@ shape = SubResource("BoxShape3D_ceiling")
 position = Vector3(0.9, 0.02, 1.1)
 mesh = SubResource("CylinderMesh_rug")
 surface_material_override/0 = SubResource("StandardMaterial3D_rug")
+
+[node name="Furniture" type="Node3D" parent="."]
+
+[node name="Couch" type="Node3D" parent="Furniture"]
+position = Vector3(-3.25, 0, 0.55)
+
+[node name="Seat" type="CSGBox3D" parent="Furniture/Couch"]
+position = Vector3(0.18, 0.28, 0)
+size = Vector3(0.9, 0.35, 2.35)
+material = SubResource("StandardMaterial3D_sofa")
+use_collision = true
+
+[node name="Back" type="CSGBox3D" parent="Furniture/Couch"]
+position = Vector3(-0.28, 0.62, 0)
+size = Vector3(0.22, 0.95, 2.45)
+material = SubResource("StandardMaterial3D_sofa")
+use_collision = true
+
+[node name="FrontArm" type="CSGBox3D" parent="Furniture/Couch"]
+position = Vector3(0.15, 0.53, -1.22)
+size = Vector3(0.9, 0.68, 0.18)
+material = SubResource("StandardMaterial3D_sofa")
+use_collision = true
+
+[node name="BackArm" type="CSGBox3D" parent="Furniture/Couch"]
+position = Vector3(0.15, 0.53, 1.22)
+size = Vector3(0.9, 0.68, 0.18)
+material = SubResource("StandardMaterial3D_sofa")
+use_collision = true
+
+[node name="CoffeeTable" type="Node3D" parent="Furniture"]
+position = Vector3(-1.85, 0, 0.55)
+
+[node name="Top" type="CSGBox3D" parent="Furniture/CoffeeTable"]
+position = Vector3(0, 0.42, 0)
+size = Vector3(1.25, 0.12, 0.75)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="LegFrontLeft" type="CSGBox3D" parent="Furniture/CoffeeTable"]
+position = Vector3(-0.5, 0.2, -0.28)
+size = Vector3(0.08, 0.4, 0.08)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="LegFrontRight" type="CSGBox3D" parent="Furniture/CoffeeTable"]
+position = Vector3(0.5, 0.2, -0.28)
+size = Vector3(0.08, 0.4, 0.08)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="LegBackLeft" type="CSGBox3D" parent="Furniture/CoffeeTable"]
+position = Vector3(-0.5, 0.2, 0.28)
+size = Vector3(0.08, 0.4, 0.08)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="LegBackRight" type="CSGBox3D" parent="Furniture/CoffeeTable"]
+position = Vector3(0.5, 0.2, 0.28)
+size = Vector3(0.08, 0.4, 0.08)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="Bookshelf" type="Node3D" parent="Furniture"]
+position = Vector3(-2.1, 0, -3.78)
+
+[node name="BackPanel" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(0, 1.0, 0)
+size = Vector3(1.55, 2.0, 0.14)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="BottomShelf" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(0, 0.25, 0.08)
+size = Vector3(1.55, 0.12, 0.42)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="MiddleShelf" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(0, 0.9, 0.08)
+size = Vector3(1.55, 0.1, 0.42)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="TopShelf" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(0, 1.55, 0.08)
+size = Vector3(1.55, 0.1, 0.42)
+material = SubResource("StandardMaterial3D_dark_wood")
+use_collision = true
+
+[node name="BookStackA" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(-0.45, 0.58, 0.18)
+size = Vector3(0.45, 0.55, 0.12)
+material = SubResource("StandardMaterial3D_shelf_books")
+
+[node name="BookStackB" type="CSGBox3D" parent="Furniture/Bookshelf"]
+position = Vector3(0.35, 1.22, 0.18)
+size = Vector3(0.5, 0.5, 0.12)
+material = SubResource("StandardMaterial3D_shelf_books")
+
+[node name="CatTree" type="Node3D" parent="Furniture"]
+position = Vector3(3.05, 0, -2.35)
+
+[node name="Base" type="CSGBox3D" parent="Furniture/CatTree"]
+position = Vector3(0, 0.06, 0)
+size = Vector3(1.0, 0.12, 0.75)
+material = SubResource("StandardMaterial3D_cat_tree_fabric")
+use_collision = true
+
+[node name="ScratchPost" type="CSGCylinder3D" parent="Furniture/CatTree"]
+position = Vector3(0, 0.65, 0)
+radius = 0.11
+height = 1.18
+sides = 18
+material = SubResource("StandardMaterial3D_scratch_post")
+use_collision = true
+
+[node name="Perch" type="CSGCylinder3D" parent="Furniture/CatTree"]
+position = Vector3(0, 1.28, 0)
+radius = 0.42
+height = 0.12
+sides = 24
+material = SubResource("StandardMaterial3D_cat_tree_fabric")
+use_collision = true
+
+[node name="SmallPerch" type="CSGCylinder3D" parent="Furniture/CatTree"]
+position = Vector3(-0.38, 0.78, 0.25)
+radius = 0.28
+height = 0.1
+sides = 20
+material = SubResource("StandardMaterial3D_cat_tree_fabric")
+use_collision = true
 
 [node name="Pillow" parent="." instance=ExtResource("2_pillow")]
 position = Vector3(-1.85, 0.08, -1.9)
