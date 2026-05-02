@@ -11,6 +11,10 @@ extends Node3D
 @export var ball_play_bounds_max: Vector2 = Vector2(3.15, 3.15)
 @export var ball_edge_turn_margin: float = 0.55
 @export_range(0.0, 1.0, 0.05) var ball_inward_push_bias: float = 0.85
+@export var wall_avoidance_distance: float = 0.95
+@export var wall_avoidance_strength: float = 0.75
+@export var explore_wander_radius: float = 0.45
+@export var explore_wander_jitter: float = 1.75
 @export var min_decision_time: float = 4.0
 @export var max_decision_time: float = 8.5
 @export var show_debug_label: bool = true
@@ -45,6 +49,8 @@ var _target_node: Node3D
 var _animation_player: AnimationPlayer
 var _pounce_hitbox: Area3D
 var _debug_label: Label3D
+var _space_state: PhysicsDirectSpaceState3D
+var _explore_wander_offset: Vector3 = Vector3.ZERO
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
 var _has_reached_target: bool = true
@@ -60,6 +66,7 @@ func _ready() -> void:
 	_pounce_hitbox = get_node_or_null("PounceHitbox") as Area3D
 	if _pounce_hitbox != null:
 		_pounce_hitbox.body_entered.connect(_on_pounce_hitbox_body_entered)
+	_space_state = get_world_3d().direct_space_state if get_world_3d() != null else null
 	_collect_targets()
 	_setup_debug_label()
 	needs.changed.connect(_on_needs_changed)
@@ -130,6 +137,8 @@ func _choose_next_state() -> void:
 	_pounce_impulse_sent = false
 	_is_exiting_state = false
 	_has_reached_target = _target_node == null
+	if current_state != &"explore":
+		_explore_wander_offset = Vector3.ZERO
 	if _has_reached_target:
 		_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
 		_play_state_animation()
@@ -180,14 +189,21 @@ func _move_towards_target(delta: float) -> bool:
 	var current_position: Vector3 = global_position
 	var target_position: Vector3 = _target_node.global_position
 	target_position.y = current_position.y
+	if current_state == &"explore":
+		target_position += _update_explore_wander_offset(delta)
 
 	var offset: Vector3 = target_position - current_position
 	if offset.length() <= arrival_radius:
 		return true
 
 	var direction: Vector3 = offset.normalized()
+	if current_state == &"explore" or current_state == &"idle":
+		var avoidance: Vector3 = _wall_avoidance_vector(current_position, direction)
+		if avoidance.length_squared() > 0.001:
+			direction = (direction + (avoidance * wall_avoidance_strength)).normalized()
 	var state_speed: float = _speed_for_current_state()
-	global_position = current_position.move_toward(target_position, state_speed * delta)
+	var step: float = min(state_speed * delta, offset.length())
+	global_position = current_position + (direction * step)
 	_face_direction(direction, delta)
 	return false
 
@@ -208,6 +224,48 @@ func _face_direction(direction: Vector3, delta: float) -> void:
 	var model_forward_offset: float = deg_to_rad(model_forward_yaw_offset_degrees)
 	var target_yaw: float = atan2(-direction.x, -direction.z) + model_forward_offset
 	rotation.y = lerp_angle(rotation.y, target_yaw, min(turn_speed * delta, 1.0))
+
+
+func _update_explore_wander_offset(delta: float) -> Vector3:
+	var jitter: Vector2 = Vector2(
+		_rng.randf_range(-1.0, 1.0),
+		_rng.randf_range(-1.0, 1.0)
+	)
+	var offset_2d: Vector2 = Vector2(_explore_wander_offset.x, _explore_wander_offset.z)
+	offset_2d += jitter * explore_wander_jitter * delta
+	if offset_2d.length_squared() > explore_wander_radius * explore_wander_radius:
+		offset_2d = offset_2d.normalized() * explore_wander_radius
+
+	_explore_wander_offset = Vector3(offset_2d.x, 0.0, offset_2d.y)
+	return _explore_wander_offset
+
+
+func _wall_avoidance_vector(origin: Vector3, direction: Vector3) -> Vector3:
+	if _space_state == null or direction.length_squared() < 0.001:
+		return Vector3.ZERO
+
+	var feeler: Vector3 = direction.normalized() * wall_avoidance_distance
+	var rays: Array[Vector3] = [
+		feeler,
+		Quaternion(Vector3.UP, deg_to_rad(30.0)) * feeler,
+		Quaternion(Vector3.UP, deg_to_rad(-30.0)) * feeler,
+	]
+
+	var avoidance: Vector3 = Vector3.ZERO
+	for ray in rays:
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, origin + ray)
+		var hit: Dictionary = _space_state.intersect_ray(query)
+		if hit.is_empty():
+			continue
+
+		var hit_position: Vector3 = hit.get("position", origin) as Vector3
+		var hit_normal: Vector3 = hit.get("normal", Vector3.ZERO) as Vector3
+		var hit_distance: float = origin.distance_to(hit_position)
+		var proximity: float = clampf(1.0 - (hit_distance / wall_avoidance_distance), 0.0, 1.0)
+		if hit_normal.length_squared() > 0.001:
+			avoidance += hit_normal * proximity
+
+	return avoidance
 
 
 func _apply_arrival_effects(delta: float) -> void:
