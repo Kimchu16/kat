@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3]
+[gd_scene load_steps=47 format=3]
 
 [ext_resource type="PackedScene" path="res://models/kat_textured_v1.glb" id="1_kat"]
 [ext_resource type="PackedScene" path="res://models/pillow_low_poly.glb" id="2_pillow"]
@@ -83,6 +83,22 @@ roughness = 1.0
 albedo_color = Color(0.423529, 0.490196, 0.462745, 1)
 roughness = 0.96
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lamp_metal"]
+albedo_color = Color(0.215686, 0.176471, 0.12549, 1)
+metallic = 0.35
+roughness = 0.55
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lampshade"]
+albedo_color = Color(0.823529, 0.729412, 0.560784, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lamp_bulb"]
+albedo_color = Color(1, 0.894118, 0.631373, 1)
+emission_enabled = true
+emission = Color(1, 0.741176, 0.431373, 1)
+emission_energy_multiplier = 1.6
+roughness = 0.35
+
 [sub_resource type="BoxMesh" id="BoxMesh_furniture_unit"]
 size = Vector3(1, 1, 1)
 
@@ -91,6 +107,12 @@ top_radius = 1.0
 bottom_radius = 1.0
 height = 1.0
 sides = 24
+
+[sub_resource type="SphereMesh" id="SphereMesh_lamp_bulb"]
+radius = 0.11
+height = 0.22
+radial_segments = 16
+rings = 8
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_couch_seat"]
 size = Vector3(0.9, 0.35, 2.35)
@@ -131,6 +153,18 @@ radius = 0.42
 height = 0.1
 radius = 0.28
 
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_lamp_base"]
+height = 0.08
+radius = 0.28
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_lamp_pole"]
+height = 1.84
+radius = 0.035
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_lampshade"]
+height = 0.38
+radius = 0.36
+
 [node name="KatRoom" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -141,13 +175,6 @@ position = Vector3(0, 3, 0)
 rotation_degrees = Vector3(-48, -28, 0)
 light_color = Color(1, 0.956863, 0.878431, 1)
 light_energy = 1.1
-shadow_enabled = true
-
-[node name="FillLight" type="OmniLight3D" parent="."]
-position = Vector3(-2.5, 2.2, -2)
-light_color = Color(1, 0.878431, 0.776471, 1)
-light_energy = 0.65
-omni_range = 10.0
 shadow_enabled = true
 
 [node name="PreviewCamera" type="Camera3D" parent="."]
@@ -435,6 +462,55 @@ surface_material_override/0 = SubResource("StandardMaterial3D_cat_tree_fabric")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CatTree/SmallPerch"]
 shape = SubResource("CylinderShape3D_cat_tree_small_perch")
+
+[node name="TallLamp" type="Node3D" parent="Furniture"]
+position = Vector3(-2.75, 0, -2)
+rotation_degrees = Vector3(0, 18, 0)
+
+[node name="Base" type="StaticBody3D" parent="Furniture/TallLamp"]
+position = Vector3(0, 0.04, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/TallLamp/Base"]
+mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.28, 0.08, 0.28)
+surface_material_override/0 = SubResource("StandardMaterial3D_lamp_metal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/TallLamp/Base"]
+shape = SubResource("CylinderShape3D_lamp_base")
+
+[node name="Pole" type="StaticBody3D" parent="Furniture/TallLamp"]
+position = Vector3(0, 0.96, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/TallLamp/Pole"]
+mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.035, 1.84, 0.035)
+surface_material_override/0 = SubResource("StandardMaterial3D_lamp_metal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/TallLamp/Pole"]
+shape = SubResource("CylinderShape3D_lamp_pole")
+
+[node name="Shade" type="StaticBody3D" parent="Furniture/TallLamp"]
+position = Vector3(0, 1.92, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/TallLamp/Shade"]
+mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.36, 0.38, 0.36)
+surface_material_override/0 = SubResource("StandardMaterial3D_lampshade")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/TallLamp/Shade"]
+shape = SubResource("CylinderShape3D_lampshade")
+
+[node name="Bulb" type="MeshInstance3D" parent="Furniture/TallLamp"]
+position = Vector3(0, 1.8, 0)
+mesh = SubResource("SphereMesh_lamp_bulb")
+surface_material_override/0 = SubResource("StandardMaterial3D_lamp_bulb")
+
+[node name="LampLight" type="OmniLight3D" parent="Furniture/TallLamp"]
+position = Vector3(0, 1.82, 0)
+light_color = Color(1, 0.878431, 0.741176, 1)
+light_energy = 0.72
+omni_range = 6.5
+shadow_enabled = false
 
 [node name="Pillow" parent="." instance=ExtResource("2_pillow")]
 position = Vector3(-1.85, 0.08, -1.9)
