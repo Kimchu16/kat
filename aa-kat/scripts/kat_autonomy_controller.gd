@@ -266,9 +266,9 @@ func _setup_debug_label() -> void:
 		_debug_label.name = "AutonomyDebugLabel"
 		add_child(_debug_label)
 
-	_debug_label.position = Vector3(0.0, 0.95, 0.0)
-	_debug_label.pixel_size = 0.015
-	_debug_label.font_size = 26
+	_debug_label.position = Vector3(0.0, 0.78, 0.0)
+	_debug_label.pixel_size = 0.009
+	_debug_label.font_size = 18
 	_debug_label.no_depth_test = true
 	_debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 
