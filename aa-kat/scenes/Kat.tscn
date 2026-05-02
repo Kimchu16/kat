@@ -1,7 +1,12 @@
-[gd_scene load_steps=16 format=4 uid="uid://b8qlymlaoh6pg"]
+[gd_scene load_steps=18 format=4 uid="uid://b8qlymlaoh6pg"]
 
 [ext_resource type="Texture2D" uid="uid://lfkero2mhmcv" path="res://models/kat_textured_v1_kat_uv_moonshadow_cyan_basecolor.png" id="1_86nai"]
 [ext_resource type="Texture2D" uid="uid://b13cisbsryiks" path="res://models/kat_textured_v1_kat_uv_moonshadow_cyan_emission.png" id="2_4jdou"]
+[ext_resource type="Script" uid="uid://dy6yb2hu5griy" path="res://scripts/kat_autonomy_controller.gd" id="3_autonomy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_pounce_hitbox"]
+radius = 0.2
+height = 0.55
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7wvks"]
 resource_name = "Kat_moonshadow_cyan"
@@ -2309,6 +2314,15 @@ _data = {
 
 [node name="Kat" type="Node3D"]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
+script = ExtResource("3_autonomy")
+
+[node name="PounceHitbox" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0.22, 0)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PounceHitbox"]
+shape = SubResource("CapsuleShape3D_pounce_hitbox")
 
 [node name="Armature" type="Node3D" parent="."]
 

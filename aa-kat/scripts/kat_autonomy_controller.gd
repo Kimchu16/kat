@@ -27,6 +27,7 @@ var current_state: StringName = &"idle"
 var _targets: Dictionary = {}
 var _target_node: Node3D
 var _animation_player: AnimationPlayer
+var _pounce_hitbox: Area3D
 var _debug_label: Label3D
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
@@ -36,6 +37,9 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 func _ready() -> void:
 	_rng.randomize()
 	_animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
+	_pounce_hitbox = get_node_or_null("PounceHitbox") as Area3D
+	if _pounce_hitbox != null:
+		_pounce_hitbox.body_entered.connect(_on_pounce_hitbox_body_entered)
 	_collect_targets()
 	_setup_debug_label()
 	needs.changed.connect(_on_needs_changed)
@@ -205,12 +209,25 @@ func _pounce_ball() -> void:
 	if ball == null:
 		return
 
+	_push_ball(ball)
+
+
+func _push_ball(ball: RigidBody3D) -> void:
 	var impulse_direction: Vector3 = ball.global_position - global_position
 	impulse_direction.y = 0.08
 	if impulse_direction.length_squared() < 0.001:
 		impulse_direction = -global_transform.basis.z + Vector3.UP * 0.08
 
 	ball.apply_central_impulse(impulse_direction.normalized() * pounce_impulse)
+
+
+func _on_pounce_hitbox_body_entered(body: Node3D) -> void:
+	if current_state != &"play" or _pounce_impulse_sent:
+		return
+
+	if body is RigidBody3D:
+		_push_ball(body as RigidBody3D)
+		_pounce_impulse_sent = true
 
 
 func _find_target_rigid_body() -> RigidBody3D:
