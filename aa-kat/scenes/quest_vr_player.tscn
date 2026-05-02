@@ -45,6 +45,7 @@ pose = &"aim"
 [node name="Pickup" parent="XROrigin3D/LeftHandController" instance=ExtResource("6_pickup")]
 
 [node name="MovementDirect" parent="XROrigin3D/LeftHandController" instance=ExtResource("7_move")]
+strafe = true
 
 [node name="RightHandController" type="XRController3D" parent="XROrigin3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 1.1, -0.45)
