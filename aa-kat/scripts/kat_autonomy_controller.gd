@@ -14,6 +14,8 @@ extends Node3D
 @export var floor_height: float = 0.0
 @export_range(0.0, 1.0, 0.05) var elevated_explore_chance: float = 0.35
 @export var pounce_impulse: float = 0.65
+@export var play_reengage_distance: float = 0.45
+@export var play_pounce_recover_time: float = 0.65
 @export var ball_play_bounds_min: Vector2 = Vector2(-3.15, -3.15)
 @export var ball_play_bounds_max: Vector2 = Vector2(3.15, 3.15)
 @export var ball_edge_turn_margin: float = 0.55
@@ -57,6 +59,7 @@ var _state_fatigue: Dictionary = {}
 var _state_history: Array[StringName] = []
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
+var _play_reengage_timer: float = 0.0
 var _has_reached_target: bool = true
 var _is_exiting_state: bool = false
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -107,6 +110,9 @@ func _process(delta: float) -> void:
 		return
 
 	_apply_arrival_effects(delta)
+	if _update_play_chase_loop(delta):
+		return
+
 	_decision_timer -= delta
 	if _decision_timer <= 0.0:
 		_finish_current_state()
@@ -159,6 +165,7 @@ func _choose_next_state() -> void:
 	current_state = selected_state
 	_target_node = _target_selector.get_target_for_action(current_state, true)
 	_pounce_impulse_sent = false
+	_play_reengage_timer = 0.0
 	_is_exiting_state = false
 	_has_reached_target = _target_node == null
 	if _target_node != null:
@@ -290,11 +297,47 @@ func _apply_arrival_effects(delta: float) -> void:
 			if not _pounce_impulse_sent:
 				_pounce_ball()
 				_pounce_impulse_sent = true
+				_play_reengage_timer = play_pounce_recover_time
 			needs.chase(delta)
 		&"explore":
 			needs.curiosity = clampf(needs.curiosity - 0.045 * delta, 0.0, 1.0)
 			needs.stress = clampf(needs.stress - 0.012 * delta, 0.0, 1.0)
 			needs.changed.emit(needs.snapshot())
+
+
+func _update_play_chase_loop(delta: float) -> bool:
+	if current_state != &"play" or _target_node == null:
+		return false
+
+	if _play_reengage_timer > 0.0:
+		_play_reengage_timer = maxf(_play_reengage_timer - delta, 0.0)
+		return false
+
+	if _play_target_horizontal_distance() > play_reengage_distance:
+		_restart_play_chase()
+		return true
+
+	_pounce_impulse_sent = false
+	_play_state_animation()
+	return false
+
+
+func _restart_play_chase() -> void:
+	_pounce_impulse_sent = false
+	_has_reached_target = false
+	_navigator.begin_target_movement(_target_node)
+	_play_locomotion_animation()
+
+
+func _play_target_horizontal_distance() -> float:
+	if _target_node == null:
+		return 0.0
+
+	var target_position: Vector3 = _target_node.global_position
+	return Vector2(
+		target_position.x - global_position.x,
+		target_position.z - global_position.z
+	).length()
 
 
 func catch_attention(source: Node3D = null) -> void:
@@ -303,6 +346,7 @@ func catch_attention(source: Node3D = null) -> void:
 	_has_reached_target = true
 	_is_exiting_state = false
 	_navigator.clear()
+	_play_reengage_timer = 0.0
 	_decision_timer = min_decision_time
 	needs.socialise(0.6)
 	if source != null:
@@ -365,6 +409,9 @@ func _on_pounce_hitbox_body_entered(body: Node3D) -> void:
 	if body is RigidBody3D:
 		_push_ball(body as RigidBody3D)
 		_pounce_impulse_sent = true
+		_play_reengage_timer = play_pounce_recover_time
+		_has_reached_target = true
+		_play_state_animation()
 
 
 func _find_target_rigid_body() -> RigidBody3D:
@@ -390,6 +437,7 @@ func _finish_current_state() -> void:
 		_target_node = null
 		_has_reached_target = true
 		_navigator.clear()
+		_play_reengage_timer = 0.0
 		return
 
 	_choose_next_state()
