@@ -1,8 +1,13 @@
 class_name KatAutonomyController
 extends Node3D
 
+# Main "brain" for Kat. Movement, target picking, and animation playback are
+# split into helper scripts so this file mostly controls the current behaviour.
+
 @export var autonomy_enabled: bool = true
 @export var target_root_path: NodePath = NodePath("../KatTargets")
+
+# Movement values are kept here so they can still be tweaked from the Kat scene.
 @export var move_speed: float = 0.85
 @export var turn_speed: float = 6.0
 @export var arrival_radius: float = 0.22
@@ -13,6 +18,9 @@ extends Node3D
 @export var elevated_target_min_height: float = 0.18
 @export var floor_height: float = 0.0
 @export_range(0.0, 1.0, 0.05) var elevated_explore_chance: float = 0.35
+
+# Ball-play settings. The re-engage timer stops Kat from instantly spamming
+# impulses before the ball has had a chance to move.
 @export var pounce_impulse: float = 0.65
 @export var play_reengage_distance: float = 0.45
 @export var play_pounce_recover_time: float = 0.65
@@ -29,6 +37,8 @@ extends Node3D
 @export var room_roam_max: Vector2 = Vector2(3.25, 2.9)
 @export var roam_pick_min_distance: float = 1.35
 @export var roam_procedural_chance: float = 0.75
+
+# These make the state choice less robotic without completely ignoring needs.
 @export_range(0.0, 1.0, 0.01) var state_selection_noise: float = 0.35
 @export_range(0.0, 1.0, 0.01) var state_repeat_penalty: float = 0.42
 @export_range(0.0, 1.0, 0.01) var state_recent_penalty: float = 0.82
@@ -39,6 +49,8 @@ extends Node3D
 @export var show_debug_label: bool = true
 @export_range(-180.0, 180.0, 1.0) var model_forward_yaw_offset_degrees: float = 90.0
 
+# I preload these instead of using the class names directly because Godot can
+# sometimes complain about new global script classes until the project reloads.
 const KAT_TARGET_SELECTOR_SCRIPT: GDScript = preload("res://scripts/kat_target_selector.gd")
 const KAT_NAVIGATOR_SCRIPT: GDScript = preload("res://scripts/kat_navigator.gd")
 const KAT_ANIMATION_DRIVER_SCRIPT: GDScript = preload("res://scripts/kat_animation_driver.gd")
@@ -89,10 +101,12 @@ func _process(delta: float) -> void:
 
 	_sync_helper_config()
 	_decay_state_fatigue(delta)
-	needs.tick(delta)
+	needs.tick(delta, current_state == &"play")
 	if _is_exiting_state:
 		return
 
+	# First Kat travels to the chosen target. Once it arrives, the state effect
+	# keeps running until its timer expires or the play loop starts chasing again.
 	if _target_node == null:
 		_decision_timer -= delta
 		if _decision_timer <= 0.0:
@@ -132,6 +146,8 @@ func _setup_helpers() -> void:
 
 
 func _sync_helper_config() -> void:
+	# Exported values live on this script for easy inspector access, then get
+	# copied into the helpers each frame in case I tune them while testing.
 	_target_selector.target_root_path = target_root_path
 	_target_selector.floor_height = floor_height
 	_target_selector.elevated_explore_chance = elevated_explore_chance
@@ -203,6 +219,8 @@ func _sample_next_state(scored_actions: Dictionary) -> StringName:
 	var weighted_actions: Dictionary = {}
 	var total_weight: float = 0.0
 
+	# This is a weighted roll rather than a strict priority list. It still
+	# favours important needs, but Kat should not choose the exact same loop.
 	for action in scored_actions:
 		var action_name: StringName = action as StringName
 		if not _action_is_available(action_name):
@@ -263,6 +281,8 @@ func _record_state_choice(action: StringName) -> void:
 	if _state_history.size() > 5:
 		_state_history.remove_at(0)
 
+	# Fatigue is separate from the short history so a state can become likely
+	# again over time instead of being blocked completely.
 	var fatigue: float = float(_state_fatigue.get(action, 0.0))
 	_state_fatigue[action] = clampf(fatigue + state_fatigue_on_use, 0.0, 2.5)
 
@@ -311,6 +331,8 @@ func _update_play_chase_loop(delta: float) -> bool:
 	if current_state != &"play" or _target_node == null:
 		return false
 
+	# After the impulse, let the pounce animation and ball physics breathe for a
+	# moment before deciding whether Kat should chase again.
 	if _play_reengage_timer > 0.0:
 		_play_reengage_timer = maxf(_play_reengage_timer - delta, 0.0)
 		return false
@@ -373,6 +395,7 @@ func _push_ball(ball: RigidBody3D) -> void:
 	if impulse_direction.length_squared() < 0.001:
 		impulse_direction = _navigator.get_visual_forward_direction() + Vector3.UP * 0.08
 
+	# Keep pounces from sending the ball straight into the walls every time.
 	impulse_direction = _steer_ball_impulse_from_bounds(ball.global_position, impulse_direction)
 	ball.apply_central_impulse(impulse_direction.normalized() * pounce_impulse)
 

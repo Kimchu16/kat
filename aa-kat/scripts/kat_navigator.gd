@@ -1,6 +1,9 @@
 class_name KatNavigator
 extends RefCounted
 
+# Handles "how do I get there?" for Kat. The controller decides the state, and
+# this helper only moves/rotates the Node3D toward the active target.
+
 var actor: Node3D
 var rng: RandomNumberGenerator
 var space_state: PhysicsDirectSpaceState3D
@@ -43,6 +46,8 @@ func begin_target_movement(target: Node3D) -> void:
 	_using_jump_arc = false
 	_jump_lands_before_target = false
 
+	# If Kat is already on furniture and needs a far-away/floor target, jump down
+	# to an edge point first instead of sliding through the object.
 	if _should_jump_down_before_target(_target_node):
 		var landing_position: Vector3 = _jump_down_landing_position(_target_node.global_position)
 		_start_jump_arc(landing_position, true)
@@ -67,6 +72,8 @@ func move_towards_target(delta: float, current_state: StringName, energy: float)
 	if actor == null or _target_node == null:
 		return true
 
+	# Jump movement is separate from normal movement because the actor is a
+	# Node3D, not a physics body that can naturally step up and down.
 	if _using_jump_arc:
 		return _move_along_jump_arc(delta)
 
@@ -98,6 +105,8 @@ func move_towards_target(delta: float, current_state: StringName, energy: float)
 func _target_position_for_state(current_state: StringName, current_position: Vector3, energy: float) -> Vector3:
 	var target_position: Vector3 = _target_node.global_position
 	if current_state == &"play":
+		# During play, lead the ball slightly based on its velocity so Kat does
+		# not keep chasing where the ball used to be.
 		return _predict_moving_target_position(target_position, current_state, current_position, energy)
 
 	return target_position
@@ -210,6 +219,7 @@ func _move_to_jump_start(delta: float, current_state: StringName, energy: float)
 		_start_jump_arc(target_position, false)
 		return _move_along_jump_arc(delta)
 
+	# Walk to a safe edge point first, then do the jump arc onto the surface.
 	var approach_position: Vector3 = _jump_approach_position(target_position, current_position)
 	var offset: Vector3 = approach_position - current_position
 	var horizontal_distance: float = offset.length()
@@ -235,6 +245,8 @@ func _jump_approach_position(target_position: Vector3, current_position: Vector3
 	var approach_position: Vector3 = Vector3(target_position.x, current_position.y, target_position.z)
 	var target_name: StringName = StringName(_target_node.name)
 
+	# These offsets are hand-tuned for the room layout. They keep Kat from
+	# approaching the middle of a couch/tree collision before jumping.
 	if target_name == &"CouchTarget":
 		approach_position.x += jump_start_distance
 	elif target_name == &"CatTreeSmallTarget":
@@ -281,6 +293,8 @@ func _move_along_jump_arc(delta: float) -> bool:
 	var progress_step: float = (jump_speed * delta) / travel_distance
 	_movement_progress = minf(_movement_progress + progress_step, 1.0)
 
+	# Simple parabolic lift. It is not real physics, but it reads as a jump and
+	# avoids Kat phasing straight through furniture vertically.
 	var base_position: Vector3 = _movement_start_position.lerp(target_position, _movement_progress)
 	var arc_offset: float = sin(_movement_progress * PI) * jump_arc_height
 	actor.global_position = Vector3(base_position.x, base_position.y + arc_offset, base_position.z)
@@ -335,6 +349,8 @@ func _wall_avoidance_vector(origin: Vector3, direction: Vector3) -> Vector3:
 	if space_state == null or direction.length_squared() < 0.001:
 		return Vector3.ZERO
 
+	# Three short feelers give enough warning for walls/furniture without making
+	# Kat look like it is bouncing off invisible barriers.
 	var feeler: Vector3 = direction.normalized() * wall_avoidance_distance
 	var rays: Array[Vector3] = [
 		feeler,

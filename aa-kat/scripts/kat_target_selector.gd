@@ -1,6 +1,10 @@
 class_name KatTargetSelector
 extends RefCounted
 
+# Keeps all target lookup and random roaming code out of the main controller.
+# The controller asks for "a play target" or "an explore target"; this decides
+# which Marker3D should actually be used.
+
 const FLOOR_EXPLORE_TARGETS: Array[StringName] = [&"ExploreTargetA", &"ExploreTargetB"]
 const ELEVATED_EXPLORE_TARGETS: Array[StringName] = [
 	&"CouchTarget",
@@ -33,6 +37,8 @@ func setup_roam_target() -> void:
 	if owner == null:
 		return
 
+	# The procedural target is just a hidden point that gets moved around the
+	# room. This makes idle/explore feel less like fixed marker hopping.
 	_roam_target = owner.get_node_or_null("ProceduralRoamTarget") as Node3D
 	var roam_parent: Node = owner.get_node_or_null(target_root_path)
 	if roam_parent == null:
@@ -53,6 +59,8 @@ func collect_targets() -> void:
 	if owner == null:
 		return
 
+	# Most targets are direct children of KatTargets, but the play target lives
+	# under the ball so it can move with the ball.
 	var target_root: Node = owner.get_node_or_null(target_root_path)
 	if target_root == null:
 		return
@@ -104,6 +112,8 @@ func refresh_roam_target(force: bool = false) -> void:
 	if _roam_target == null or owner == null:
 		return
 
+	# Keep the current roam target until Kat gets close enough; otherwise the
+	# destination changes too often and the cat looks confused.
 	if not force and _roam_target.global_position.distance_to(owner.global_position) > roam_pick_min_distance:
 		return
 
@@ -125,6 +135,8 @@ func refresh_roam_target(force: bool = false) -> void:
 
 
 func _pick_explore_target() -> Node3D:
+	# Explore is a mix of furniture climbing and floor roaming. The exact chance
+	# is exported so it can be tuned in the editor during testing.
 	if rng.randf() < elevated_explore_chance:
 		var elevated_target: Node3D = _pick_target_from_names(ELEVATED_EXPLORE_TARGETS)
 		if elevated_target != null:

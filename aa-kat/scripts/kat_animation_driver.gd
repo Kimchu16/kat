@@ -1,6 +1,9 @@
 class_name KatAnimationDriver
 extends RefCounted
 
+# Small wrapper around AnimationPlayer. This keeps animation name lookups and
+# enter/idle/exit handling out of the autonomy controller.
+
 const ACTION_ANIMATIONS: Dictionary = {
 	&"idle": &"Idle",
 	&"eat": &"Eat",
@@ -34,10 +37,14 @@ func play_state_animation(current_state: StringName) -> void:
 	if animation_player == null:
 		return
 
+	# Explore uses Run while travelling, but once Kat reaches the point it should
+	# settle instead of running on the spot.
 	if current_state == &"explore":
 		play_idle_animation()
 		return
 
+	# Sleep is split into enter/idle/exit clips, so try that path before using a
+	# single animation name.
 	if play_action_phase_animation(current_state, PHASE_ENTER, 0.2):
 		return
 
