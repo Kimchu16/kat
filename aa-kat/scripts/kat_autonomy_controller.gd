@@ -7,6 +7,10 @@ extends Node3D
 @export var turn_speed: float = 6.0
 @export var arrival_radius: float = 0.22
 @export var pounce_impulse: float = 0.65
+@export var ball_play_bounds_min: Vector2 = Vector2(-3.15, -3.15)
+@export var ball_play_bounds_max: Vector2 = Vector2(3.15, 3.15)
+@export var ball_edge_turn_margin: float = 0.55
+@export_range(0.0, 1.0, 0.05) var ball_inward_push_bias: float = 0.85
 @export var min_decision_time: float = 4.0
 @export var max_decision_time: float = 8.5
 @export var show_debug_label: bool = true
@@ -22,9 +26,20 @@ const ACTION_ANIMATIONS: Dictionary = {
 
 const LOCOMOTION_ANIMATION: StringName = &"Run"
 const ATTENTION_ANIMATION: StringName = &"AttentionCaught"
-const HOLD_POSE_TIMES: Dictionary = {
-	&"Sleep": 1.8666667,
-	&"Sit": 1.2666667,
+const PHASE_ENTER: StringName = &"enter"
+const PHASE_IDLE: StringName = &"idle"
+const PHASE_EXIT: StringName = &"exit"
+const PHASED_ACTION_ANIMATIONS: Dictionary = {
+	&"eat": {
+		PHASE_ENTER: &"Sit_Enter",
+		PHASE_IDLE: &"Sit_Idle",
+		PHASE_EXIT: &"Sit_Exit",
+	},
+	&"rest": {
+		PHASE_ENTER: &"Sleep_Enter",
+		PHASE_IDLE: &"Sleep_Idle",
+		PHASE_EXIT: &"Sleep_Exit",
+	},
 }
 
 var needs: KatNeeds = KatNeeds.new()
@@ -38,12 +53,15 @@ var _debug_label: Label3D
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
 var _has_reached_target: bool = true
+var _is_exiting_state: bool = false
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
 	_rng.randomize()
 	_animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if _animation_player != null:
+		_animation_player.animation_finished.connect(_on_animation_finished)
 	_pounce_hitbox = get_node_or_null("PounceHitbox") as Area3D
 	if _pounce_hitbox != null:
 		_pounce_hitbox.body_entered.connect(_on_pounce_hitbox_body_entered)
@@ -58,9 +76,10 @@ func _process(delta: float) -> void:
 		return
 
 	needs.tick(delta)
+	if _is_exiting_state:
+		return
 
 	if _target_node == null:
-		_hold_pose_animation()
 		_decision_timer -= delta
 		if _decision_timer <= 0.0:
 			_choose_next_state()
@@ -75,11 +94,10 @@ func _process(delta: float) -> void:
 			_apply_arrival_effects(delta)
 		return
 
-	_hold_pose_animation()
 	_apply_arrival_effects(delta)
 	_decision_timer -= delta
 	if _decision_timer <= 0.0:
-		_choose_next_state()
+		_finish_current_state()
 
 
 func _collect_targets() -> void:
@@ -115,6 +133,7 @@ func _choose_next_state() -> void:
 	current_state = selected_state
 	_target_node = _get_target_for_action(current_state)
 	_pounce_impulse_sent = false
+	_is_exiting_state = false
 	_has_reached_target = _target_node == null
 	if _has_reached_target:
 		_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
@@ -216,6 +235,8 @@ func _apply_arrival_effects(delta: float) -> void:
 func catch_attention(source: Node3D = null) -> void:
 	current_state = &"attention"
 	_target_node = null
+	_has_reached_target = true
+	_is_exiting_state = false
 	_decision_timer = min_decision_time
 	needs.socialise(0.6)
 	if source != null:
@@ -240,7 +261,35 @@ func _push_ball(ball: RigidBody3D) -> void:
 	if impulse_direction.length_squared() < 0.001:
 		impulse_direction = _get_visual_forward_direction() + Vector3.UP * 0.08
 
+	impulse_direction = _steer_ball_impulse_from_bounds(ball.global_position, impulse_direction)
 	ball.apply_central_impulse(impulse_direction.normalized() * pounce_impulse)
+
+
+func _steer_ball_impulse_from_bounds(ball_position: Vector3, impulse_direction: Vector3) -> Vector3:
+	var horizontal_impulse: Vector3 = Vector3(impulse_direction.x, 0.0, impulse_direction.z)
+	var inward_direction: Vector3 = Vector3.ZERO
+
+	if ball_position.x <= ball_play_bounds_min.x + ball_edge_turn_margin and horizontal_impulse.x < 0.0:
+		inward_direction.x += 1.0
+	if ball_position.x >= ball_play_bounds_max.x - ball_edge_turn_margin and horizontal_impulse.x > 0.0:
+		inward_direction.x -= 1.0
+	if ball_position.z <= ball_play_bounds_min.y + ball_edge_turn_margin and horizontal_impulse.z < 0.0:
+		inward_direction.z += 1.0
+	if ball_position.z >= ball_play_bounds_max.y - ball_edge_turn_margin and horizontal_impulse.z > 0.0:
+		inward_direction.z -= 1.0
+
+	if inward_direction.length_squared() < 0.001:
+		return impulse_direction
+
+	var inward_normal: Vector3 = inward_direction.normalized()
+	if horizontal_impulse.length_squared() < 0.001:
+		horizontal_impulse = inward_normal
+	else:
+		horizontal_impulse = horizontal_impulse.normalized().lerp(inward_normal, ball_inward_push_bias)
+		if horizontal_impulse.length_squared() < 0.001:
+			horizontal_impulse = inward_normal
+
+	return Vector3(horizontal_impulse.x, impulse_direction.y, horizontal_impulse.z)
 
 
 func _on_pounce_hitbox_body_entered(body: Node3D) -> void:
@@ -263,6 +312,9 @@ func _find_target_rigid_body() -> RigidBody3D:
 
 func _play_state_animation() -> void:
 	if _animation_player == null:
+		return
+
+	if _play_action_phase_animation(current_state, PHASE_ENTER, 0.2):
 		return
 
 	var animation_name: StringName = ACTION_ANIMATIONS.get(current_state, &"Idle") as StringName
@@ -288,21 +340,55 @@ func _get_visual_forward_direction() -> Vector3:
 	return forward.normalized()
 
 
-func _hold_pose_animation() -> void:
+func _finish_current_state() -> void:
+	if _play_action_phase_animation(current_state, PHASE_EXIT, 0.12):
+		_is_exiting_state = true
+		_target_node = null
+		_has_reached_target = true
+		return
+
+	_choose_next_state()
+
+
+func _play_action_phase_animation(action: StringName, phase: StringName, blend: float) -> bool:
 	if _animation_player == null:
+		return false
+
+	var animation_name: StringName = _get_action_phase_animation(action, phase)
+	if animation_name == &"":
+		return false
+
+	if not _animation_player.has_animation(animation_name):
+		return false
+
+	_animation_player.play(animation_name, blend)
+	return true
+
+
+func _get_action_phase_animation(action: StringName, phase: StringName) -> StringName:
+	if not PHASED_ACTION_ANIMATIONS.has(action):
+		return &""
+
+	var phase_animations: Dictionary = PHASED_ACTION_ANIMATIONS[action] as Dictionary
+	return phase_animations.get(phase, &"") as StringName
+
+
+func _animation_matches_phase(action: StringName, phase: StringName, animation_name: StringName) -> bool:
+	return _get_action_phase_animation(action, phase) == animation_name
+
+
+func _on_animation_finished(animation_name: StringName) -> void:
+	if _is_exiting_state and _animation_matches_phase(current_state, PHASE_EXIT, animation_name):
+		_is_exiting_state = false
+		_choose_next_state()
 		return
 
-	var animation_name: StringName = ACTION_ANIMATIONS.get(current_state, &"Idle") as StringName
-	if not HOLD_POSE_TIMES.has(animation_name):
+	if _animation_matches_phase(current_state, PHASE_ENTER, animation_name):
+		_play_action_phase_animation(current_state, PHASE_IDLE, 0.12)
 		return
 
-	if StringName(_animation_player.current_animation) != animation_name:
-		return
-
-	var hold_time: float = float(HOLD_POSE_TIMES[animation_name])
-	if _animation_player.current_animation_position >= hold_time:
-		_animation_player.seek(hold_time, true)
-		_animation_player.pause()
+	if _animation_matches_phase(current_state, PHASE_IDLE, animation_name):
+		_play_action_phase_animation(current_state, PHASE_IDLE, 0.0)
 
 
 func _play_attention_animation() -> void:
@@ -323,9 +409,9 @@ func _setup_debug_label() -> void:
 		_debug_label.name = "AutonomyDebugLabel"
 		add_child(_debug_label)
 
-	_debug_label.position = Vector3(0.0, 0.78, 0.0)
-	_debug_label.pixel_size = 0.009
-	_debug_label.font_size = 18
+	_debug_label.position = Vector3(0.0, 0.68, 0.0)
+	_debug_label.pixel_size = 0.006
+	_debug_label.font_size = 12
 	_debug_label.no_depth_test = true
 	_debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 
