@@ -30,11 +30,6 @@ const PHASE_ENTER: StringName = &"enter"
 const PHASE_IDLE: StringName = &"idle"
 const PHASE_EXIT: StringName = &"exit"
 const PHASED_ACTION_ANIMATIONS: Dictionary = {
-	&"eat": {
-		PHASE_ENTER: &"Sit_Enter",
-		PHASE_IDLE: &"Sit_Idle",
-		PHASE_EXIT: &"Sit_Exit",
-	},
 	&"rest": {
 		PHASE_ENTER: &"Sleep_Enter",
 		PHASE_IDLE: &"Sleep_Idle",
