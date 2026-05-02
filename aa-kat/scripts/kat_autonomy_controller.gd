@@ -312,10 +312,16 @@ func _decision_window_for_state(action: StringName) -> float:
 
 func _setup_roam_target() -> void:
 	_roam_target = get_node_or_null("ProceduralRoamTarget") as Node3D
+	var roam_parent: Node = get_node_or_null(target_root_path)
+	if roam_parent == null:
+		roam_parent = get_tree().current_scene
+
 	if _roam_target == null:
 		_roam_target = Node3D.new()
 		_roam_target.name = "ProceduralRoamTarget"
-		add_child(_roam_target)
+		roam_parent.add_child(_roam_target)
+	elif _roam_target.get_parent() != roam_parent:
+		_roam_target.reparent(roam_parent, true)
 	_refresh_roam_target(true)
 
 
@@ -356,10 +362,9 @@ func _move_towards_target(delta: float) -> bool:
 		return true
 
 	var direction: Vector3 = offset.normalized()
-	if current_state == &"explore" or current_state == &"idle":
-		var avoidance: Vector3 = _wall_avoidance_vector(current_position, direction)
-		if avoidance.length_squared() > 0.001:
-			direction = (direction + (avoidance * wall_avoidance_strength)).normalized()
+	var avoidance: Vector3 = _wall_avoidance_vector(current_position, direction)
+	if avoidance.length_squared() > 0.001:
+		direction = (direction + (avoidance * wall_avoidance_strength)).normalized()
 	var state_speed: float = _speed_for_current_state()
 	var step: float = min(state_speed * delta, offset.length())
 	global_position = current_position + (direction * step)
@@ -526,6 +531,10 @@ func _play_state_animation() -> void:
 	if _animation_player == null:
 		return
 
+	if current_state == &"explore":
+		_play_idle_animation()
+		return
+
 	if _play_action_phase_animation(current_state, PHASE_ENTER, 0.2):
 		return
 
@@ -541,6 +550,15 @@ func _play_locomotion_animation() -> void:
 	if _animation_player.has_animation(LOCOMOTION_ANIMATION):
 		if StringName(_animation_player.current_animation) != LOCOMOTION_ANIMATION or not _animation_player.is_playing():
 			_animation_player.play(LOCOMOTION_ANIMATION, 0.15)
+
+
+func _play_idle_animation() -> void:
+	if _animation_player == null:
+		return
+
+	if _animation_player.has_animation(&"Idle"):
+		if StringName(_animation_player.current_animation) != &"Idle" or not _animation_player.is_playing():
+			_animation_player.play(&"Idle", 0.15)
 
 
 func _get_visual_forward_direction() -> Vector3:
