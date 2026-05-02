@@ -20,6 +20,10 @@ const ACTION_ANIMATIONS: Dictionary = {
 }
 
 const ATTENTION_ANIMATION: StringName = &"AttentionCaught"
+const HOLD_POSE_TIMES: Dictionary = {
+	&"Sleep": 1.8666667,
+	&"Sit": 1.2666667,
+}
 
 var needs: KatNeeds = KatNeeds.new()
 var current_state: StringName = &"idle"
@@ -51,6 +55,7 @@ func _process(delta: float) -> void:
 		return
 
 	needs.tick(delta)
+	_hold_pose_animation()
 	_decision_timer -= delta
 
 	if _target_node == null:
@@ -246,6 +251,23 @@ func _play_state_animation() -> void:
 	var animation_name: StringName = ACTION_ANIMATIONS.get(current_state, &"Idle") as StringName
 	if _animation_player.has_animation(animation_name):
 		_animation_player.play(animation_name, 0.2)
+
+
+func _hold_pose_animation() -> void:
+	if _animation_player == null:
+		return
+
+	var animation_name: StringName = ACTION_ANIMATIONS.get(current_state, &"Idle") as StringName
+	if not HOLD_POSE_TIMES.has(animation_name):
+		return
+
+	if StringName(_animation_player.current_animation) != animation_name:
+		return
+
+	var hold_time: float = float(HOLD_POSE_TIMES[animation_name])
+	if _animation_player.current_animation_position >= hold_time:
+		_animation_player.seek(hold_time, true)
+		_animation_player.pause()
 
 
 func _play_attention_animation() -> void:
