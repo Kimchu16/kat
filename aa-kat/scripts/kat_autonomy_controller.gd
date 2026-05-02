@@ -16,6 +16,7 @@ extends Node3D
 @export var pounce_impulse: float = 0.65
 @export var play_reengage_distance: float = 0.45
 @export var play_pounce_recover_time: float = 0.65
+@export var play_target_prediction_limit: float = 0.35
 @export var ball_play_bounds_min: Vector2 = Vector2(-3.15, -3.15)
 @export var ball_play_bounds_max: Vector2 = Vector2(3.15, 3.15)
 @export var ball_edge_turn_margin: float = 0.55
@@ -148,6 +149,7 @@ func _sync_helper_config() -> void:
 	_navigator.jump_arc_height = jump_arc_height
 	_navigator.elevated_target_min_height = elevated_target_min_height
 	_navigator.floor_height = floor_height
+	_navigator.moving_target_prediction_limit = play_target_prediction_limit
 	_navigator.wall_avoidance_distance = wall_avoidance_distance
 	_navigator.wall_avoidance_strength = wall_avoidance_strength
 	_navigator.explore_wander_radius = explore_wander_radius

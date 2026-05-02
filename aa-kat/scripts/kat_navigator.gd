@@ -13,6 +13,7 @@ var jump_speed: float = 1.05
 var jump_arc_height: float = 0.65
 var elevated_target_min_height: float = 0.18
 var floor_height: float = 0.0
+var moving_target_prediction_limit: float = 0.35
 var wall_avoidance_distance: float = 0.95
 var wall_avoidance_strength: float = 0.75
 var explore_wander_radius: float = 0.45
@@ -73,7 +74,7 @@ func move_towards_target(delta: float, current_state: StringName, energy: float)
 		return _move_to_jump_start(delta, current_state, energy)
 
 	var current_position: Vector3 = actor.global_position
-	var target_position: Vector3 = _target_node.global_position
+	var target_position: Vector3 = _target_position_for_state(current_state, current_position, energy)
 	target_position.y = current_position.y
 	if current_state == &"explore" or current_state == &"idle":
 		target_position += _update_explore_wander_offset(delta)
@@ -92,6 +93,42 @@ func move_towards_target(delta: float, current_state: StringName, energy: float)
 	actor.global_position = current_position + (direction * step)
 	face_direction(direction, delta)
 	return false
+
+
+func _target_position_for_state(current_state: StringName, current_position: Vector3, energy: float) -> Vector3:
+	var target_position: Vector3 = _target_node.global_position
+	if current_state == &"play":
+		return _predict_moving_target_position(target_position, current_state, current_position, energy)
+
+	return target_position
+
+
+func _predict_moving_target_position(target_position: Vector3, current_state: StringName, current_position: Vector3, energy: float) -> Vector3:
+	var moving_body: RigidBody3D = _find_target_rigid_body()
+	if moving_body == null:
+		return target_position
+
+	var target_velocity: Vector3 = moving_body.linear_velocity
+	target_velocity.y = 0.0
+	if target_velocity.length_squared() < 0.001 or moving_target_prediction_limit <= 0.0:
+		return target_position
+
+	var flat_distance: float = Vector2(
+		target_position.x - current_position.x,
+		target_position.z - current_position.z
+	).length()
+	var state_speed: float = maxf(_speed_for_current_state(current_state, energy), 0.01)
+	var prediction_time: float = clampf(flat_distance / state_speed, 0.0, moving_target_prediction_limit)
+	return _clamp_to_room_bounds(target_position + target_velocity * prediction_time)
+
+
+func _find_target_rigid_body() -> RigidBody3D:
+	var node: Node = _target_node
+	while node != null:
+		if node is RigidBody3D:
+			return node as RigidBody3D
+		node = node.get_parent()
+	return null
 
 
 func face_direction(direction: Vector3, delta: float) -> void:
