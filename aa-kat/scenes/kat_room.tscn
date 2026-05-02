@@ -279,12 +279,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55, 0, 0.35)
 [node name="RestTarget" type="Marker3D" parent="KatTargets"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0, -1.55)
 
-[node name="PlayTarget" type="Marker3D" parent="KatTargets"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.05, 0, 1.35)
-
-[node name="SocialTarget" type="Marker3D" parent="KatTargets"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0, 1.85)
-
 [node name="ExploreTargetA" type="Marker3D" parent="KatTargets"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55, 0, -2.1)
 
@@ -633,7 +627,9 @@ skeleton = NodePath("")
 [node name="Kat" parent="." instance=ExtResource("7_8sno8")]
 
 [node name="Ball" parent="." instance=ExtResource("8_kesyf")]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, -1.173331, 0.13506031, 1.622466)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.173331, 0.13506031, 1.622466)
+
+[node name="PlayTarget" type="Marker3D" parent="Ball"]
 
 [node name="FishTreat" parent="." instance=ExtResource("8_g7r17")]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 2.0170693, 0, 0)
