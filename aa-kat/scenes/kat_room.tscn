@@ -271,6 +271,26 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.6)
 [node name="KatSpawn" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.2)
 
+[node name="KatTargets" type="Node3D" parent="."]
+
+[node name="FoodTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55, 0, 0.35)
+
+[node name="RestTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0, -1.55)
+
+[node name="PlayTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.05, 0, 1.35)
+
+[node name="SocialTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0, 1.85)
+
+[node name="ExploreTargetA" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55, 0, -2.1)
+
+[node name="ExploreTargetB" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.45, 0, -2.35)
+
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 
