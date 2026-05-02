@@ -79,10 +79,7 @@ size = Vector3(0.22, 0.95, 2.45)
 size = Vector3(0.9, 0.68, 0.18)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_couch_safety"]
-size = Vector3(1.45, 0.95, 2.85)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_pillow_collision"]
-size = Vector3(0.85, 0.18, 0.45)
+size = Vector3(1.45, 0.48720703, 2.85)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
 albedo_color = Color(0.282353, 0.184314, 0.121569, 1)
@@ -215,6 +212,9 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_i34eq")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pillow_collision"]
+size = Vector3(20.367489, 20.408909, 7.0229073)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l6lom"]
 resource_name = "Materil.030"
@@ -403,6 +403,7 @@ shape = SubResource("BoxShape3D_couch_arm")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/CouchSafetyZone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.23139648, 0)
 shape = SubResource("BoxShape3D_couch_safety")
 
 [node name="CoffeeTable" type="Node3D" parent="Furniture"]
@@ -622,10 +623,11 @@ transform = Transform3D(0.9999999, -5.9604645e-08, -1.7763568e-15, 5.9604645e-08
 mesh = SubResource("ArrayMesh_msitv")
 skeleton = NodePath("")
 
-[node name="PillowCollision" type="StaticBody3D" parent="Furniture"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2323102, -0.12727518, -1.9)
+[node name="PillowCollision" type="StaticBody3D" parent="Furniture/Pillow"]
+transform = Transform3D(0.9999999, -5.9604645e-08, -1.7763568e-15, 5.9604645e-08, 0.9999999, 1.0658141e-14, 3.5527137e-15, 7.1054274e-15, 0.9999998, 1.4069557, 23.263773, 9.536743e-07)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/PillowCollision"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Pillow/PillowCollision"]
+transform = Transform3D(0.9999999, -2.9802322e-08, -7.1054274e-15, 2.9802322e-08, 0.9999999, -3.5527137e-15, -2.7888802e-13, -1.0658141e-14, 0.9999998, -0.060760498, 0.0016555786, 4.511453)
 shape = SubResource("BoxShape3D_pillow_collision")
 
 [node name="Food Bowl" type="Node3D" parent="Furniture"]
