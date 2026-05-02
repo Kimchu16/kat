@@ -15,6 +15,15 @@ extends Node3D
 @export var wall_avoidance_strength: float = 0.75
 @export var explore_wander_radius: float = 0.45
 @export var explore_wander_jitter: float = 1.75
+@export var room_roam_min: Vector2 = Vector2(-3.2, -2.95)
+@export var room_roam_max: Vector2 = Vector2(3.25, 2.9)
+@export var roam_pick_min_distance: float = 1.35
+@export var roam_procedural_chance: float = 0.75
+@export_range(0.0, 1.0, 0.01) var state_selection_noise: float = 0.35
+@export_range(0.0, 1.0, 0.01) var state_repeat_penalty: float = 0.42
+@export_range(0.0, 1.0, 0.01) var state_recent_penalty: float = 0.82
+@export var state_fatigue_decay_per_second: float = 0.08
+@export var state_fatigue_on_use: float = 0.7
 @export var min_decision_time: float = 4.0
 @export var max_decision_time: float = 8.5
 @export var show_debug_label: bool = true
@@ -51,6 +60,9 @@ var _pounce_hitbox: Area3D
 var _debug_label: Label3D
 var _space_state: PhysicsDirectSpaceState3D
 var _explore_wander_offset: Vector3 = Vector3.ZERO
+var _roam_target: Node3D
+var _state_fatigue: Dictionary = {}
+var _state_history: Array[StringName] = []
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
 var _has_reached_target: bool = true
@@ -67,6 +79,7 @@ func _ready() -> void:
 	if _pounce_hitbox != null:
 		_pounce_hitbox.body_entered.connect(_on_pounce_hitbox_body_entered)
 	_space_state = get_world_3d().direct_space_state if get_world_3d() != null else null
+	_setup_roam_target()
 	_collect_targets()
 	_setup_debug_label()
 	needs.changed.connect(_on_needs_changed)
@@ -77,6 +90,7 @@ func _process(delta: float) -> void:
 	if not autonomy_enabled:
 		return
 
+	_decay_state_fatigue(delta)
 	needs.tick(delta)
 	if _is_exiting_state:
 		return
@@ -119,31 +133,20 @@ func _collect_targets() -> void:
 
 func _choose_next_state() -> void:
 	var scored_actions: Dictionary = _score_actions()
-	var selected_state: StringName = &"idle"
-	var best_score: float = 0.18
-
-	for action in scored_actions:
-		var action_name: StringName = action as StringName
-		if action_name != &"idle" and _get_target_for_action(action_name) == null:
-			continue
-
-		var score: float = float(scored_actions[action])
-		if score > best_score:
-			best_score = score
-			selected_state = action_name
+	var selected_state: StringName = _sample_next_state(scored_actions)
 
 	current_state = selected_state
-	_target_node = _get_target_for_action(current_state)
+	_target_node = _get_target_for_action(current_state, true)
 	_pounce_impulse_sent = false
 	_is_exiting_state = false
 	_has_reached_target = _target_node == null
-	if current_state != &"explore":
+	if current_state != &"explore" and current_state != &"idle":
 		_explore_wander_offset = Vector3.ZERO
+	_record_state_choice(current_state)
+	_decision_timer = _decision_window_for_state(current_state)
 	if _has_reached_target:
-		_decision_timer = _rng.randf_range(min_decision_time, max_decision_time)
 		_play_state_animation()
 	else:
-		_decision_timer = 0.0
 		_play_locomotion_animation()
 	_update_debug_label(needs.snapshot())
 
@@ -158,7 +161,23 @@ func _score_actions() -> Dictionary:
 	}
 
 
-func _get_target_for_action(action: StringName) -> Node3D:
+func _action_is_available(action: StringName) -> bool:
+	match action:
+		&"eat":
+			return _targets.get(&"FoodTarget") != null
+		&"rest":
+			return _targets.get(&"RestTarget") != null
+		&"play":
+			return _targets.get(&"PlayTarget") != null
+		&"explore":
+			return _roam_target != null or _targets.has(&"ExploreTargetA") or _targets.has(&"ExploreTargetB")
+		&"idle":
+			return true
+		_:
+			return false
+
+
+func _get_target_for_action(action: StringName, refresh_roam: bool = false) -> Node3D:
 	match action:
 		&"eat":
 			return _targets.get(&"FoodTarget") as Node3D
@@ -168,11 +187,22 @@ func _get_target_for_action(action: StringName) -> Node3D:
 			return _targets.get(&"PlayTarget") as Node3D
 		&"explore":
 			return _pick_explore_target()
+		&"idle":
+			if refresh_roam:
+				_refresh_roam_target(true)
+			return _roam_target
 		_:
 			return null
 
 
 func _pick_explore_target() -> Node3D:
+	if _roam_target == null:
+		return null
+
+	if _rng.randf() < roam_procedural_chance:
+		_refresh_roam_target(true)
+		return _roam_target
+
 	var explore_targets: Array[Node3D] = []
 	for key in [&"ExploreTargetA", &"ExploreTargetB"]:
 		var target: Node3D = _targets.get(key) as Node3D
@@ -180,16 +210,145 @@ func _pick_explore_target() -> Node3D:
 			explore_targets.append(target)
 
 	if explore_targets.is_empty():
-		return null
+		_refresh_roam_target(true)
+		return _roam_target
+
+	if _rng.randf() < 0.35:
+		_refresh_roam_target(true)
+		return _roam_target
 
 	return explore_targets[_rng.randi_range(0, explore_targets.size() - 1)]
+
+
+func _sample_next_state(scored_actions: Dictionary) -> StringName:
+	var weighted_actions: Dictionary = {}
+	var total_weight: float = 0.0
+
+	for action in scored_actions:
+		var action_name: StringName = action as StringName
+		if not _action_is_available(action_name):
+			continue
+
+		var weight: float = maxf(float(scored_actions[action]), 0.01)
+		weight *= _state_noise_for_action(action_name)
+		weight *= _state_fatigue_factor(action_name)
+		weight *= _settled_state_bias(action_name)
+		if action_name == current_state:
+			weight *= state_repeat_penalty
+		if _state_history.size() > 0 and _state_history[_state_history.size() - 1] == action_name:
+			weight *= state_recent_penalty
+		if weight <= 0.001:
+			continue
+
+		weighted_actions[action_name] = weight
+		total_weight += weight
+
+	if weighted_actions.is_empty() or total_weight <= 0.0:
+		return &"idle"
+
+	var roll: float = _rng.randf() * total_weight
+	for action in weighted_actions:
+		roll -= float(weighted_actions[action])
+		if roll <= 0.0:
+			return action as StringName
+
+	return weighted_actions.keys()[0] as StringName
+
+
+func _state_noise_for_action(action: StringName) -> float:
+	var jitter: float = _rng.randf_range(1.0 - state_selection_noise, 1.0 + state_selection_noise)
+	if action == &"idle" or action == &"explore":
+		jitter += 0.12
+	if action == &"eat":
+		jitter -= 0.05
+	return maxf(jitter, 0.1)
+
+
+func _state_fatigue_factor(action: StringName) -> float:
+	var fatigue: float = float(_state_fatigue.get(action, 0.0))
+	return 1.0 / (1.0 + fatigue)
+
+
+func _settled_state_bias(action: StringName) -> float:
+	var dominant_need: StringName = needs.dominant_need()
+	if dominant_need == &"settled" or dominant_need == &"curious":
+		if action == &"idle" or action == &"explore":
+			return 1.45
+		if action == &"eat" or action == &"rest" or action == &"play":
+			return 0.82
+	return 1.0
+
+
+func _record_state_choice(action: StringName) -> void:
+	_state_history.append(action)
+	if _state_history.size() > 5:
+		_state_history.remove_at(0)
+
+	var fatigue: float = float(_state_fatigue.get(action, 0.0))
+	_state_fatigue[action] = clampf(fatigue + state_fatigue_on_use, 0.0, 2.5)
+
+
+func _decay_state_fatigue(delta: float) -> void:
+	for action in _state_fatigue.keys():
+		var fatigue: float = float(_state_fatigue[action])
+		_state_fatigue[action] = maxf(0.0, fatigue - state_fatigue_decay_per_second * delta)
+
+
+func _decision_window_for_state(action: StringName) -> float:
+	match action:
+		&"eat":
+			return _rng.randf_range(5.5, 11.5)
+		&"rest":
+			return _rng.randf_range(9.0, 18.0)
+		&"play":
+			return _rng.randf_range(5.0, 10.0)
+		&"explore":
+			return _rng.randf_range(2.5, 6.5)
+		&"idle":
+			return _rng.randf_range(1.8, 4.5)
+		_:
+			return _rng.randf_range(min_decision_time, max_decision_time)
+
+
+func _setup_roam_target() -> void:
+	_roam_target = get_node_or_null("ProceduralRoamTarget") as Node3D
+	if _roam_target == null:
+		_roam_target = Node3D.new()
+		_roam_target.name = "ProceduralRoamTarget"
+		add_child(_roam_target)
+	_refresh_roam_target(true)
+
+
+func _refresh_roam_target(force: bool = false) -> void:
+	if _roam_target == null:
+		return
+
+	if not force and _roam_target.global_position.distance_to(global_position) > roam_pick_min_distance:
+		return
+
+	var min_x: float = minf(room_roam_min.x, room_roam_max.x)
+	var max_x: float = maxf(room_roam_min.x, room_roam_max.x)
+	var min_z: float = minf(room_roam_min.y, room_roam_max.y)
+	var max_z: float = maxf(room_roam_min.y, room_roam_max.y)
+	var candidate: Vector3 = _roam_target.global_position
+
+	for i in range(6):
+		candidate = Vector3(
+			_rng.randf_range(min_x, max_x),
+			global_position.y,
+			_rng.randf_range(min_z, max_z)
+		)
+		if candidate.distance_to(global_position) >= roam_pick_min_distance:
+			break
+
+	_roam_target.global_position = candidate
 
 
 func _move_towards_target(delta: float) -> bool:
 	var current_position: Vector3 = global_position
 	var target_position: Vector3 = _target_node.global_position
 	target_position.y = current_position.y
-	if current_state == &"explore":
+	if current_state == &"explore" or current_state == &"idle":
 		target_position += _update_explore_wander_offset(delta)
 
 	var offset: Vector3 = target_position - current_position
