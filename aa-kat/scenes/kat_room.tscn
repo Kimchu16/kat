@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="PackedScene" path="res://models/kat_textured_v1.glb" id="1_kat"]
 [ext_resource type="PackedScene" path="res://models/pillow_low_poly.glb" id="2_pillow"]
@@ -86,18 +86,50 @@ roughness = 0.96
 [sub_resource type="BoxMesh" id="BoxMesh_furniture_unit"]
 size = Vector3(1, 1, 1)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_furniture_unit"]
-size = Vector3(1, 1, 1)
-
 [sub_resource type="CylinderMesh" id="CylinderMesh_furniture_unit"]
 top_radius = 1.0
 bottom_radius = 1.0
 height = 1.0
 sides = 24
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_furniture_unit"]
-height = 1.0
-radius = 1.0
+[sub_resource type="BoxShape3D" id="BoxShape3D_couch_seat"]
+size = Vector3(0.9, 0.35, 2.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_couch_back"]
+size = Vector3(0.22, 0.95, 2.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_couch_arm"]
+size = Vector3(0.9, 0.68, 0.18)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_coffee_table_top"]
+size = Vector3(1.25, 0.12, 0.75)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_coffee_table_leg"]
+size = Vector3(0.08, 0.4, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_back"]
+size = Vector3(1.55, 2, 0.14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_bottom"]
+size = Vector3(1.55, 0.12, 0.42)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_shelf"]
+size = Vector3(1.55, 0.1, 0.42)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cat_tree_base"]
+size = Vector3(1, 0.12, 0.75)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_scratch_post"]
+height = 1.18
+radius = 0.11
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_cat_tree_perch"]
+height = 0.12
+radius = 0.42
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_cat_tree_small_perch"]
+height = 0.1
+radius = 0.28
 
 [node name="KatRoom" type="Node3D"]
 
@@ -198,152 +230,152 @@ position = Vector3(-3.25, 0, 0.55)
 
 [node name="Seat" type="StaticBody3D" parent="Furniture/Couch"]
 position = Vector3(0.18, 0.28, 0)
-scale = Vector3(0.9, 0.35, 2.35)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Couch/Seat"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.9, 0.35, 2.35)
 surface_material_override/0 = SubResource("StandardMaterial3D_sofa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/Seat"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_couch_seat")
 
 [node name="Back" type="StaticBody3D" parent="Furniture/Couch"]
 position = Vector3(-0.28, 0.62, 0)
-scale = Vector3(0.22, 0.95, 2.45)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Couch/Back"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.22, 0.95, 2.45)
 surface_material_override/0 = SubResource("StandardMaterial3D_sofa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/Back"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_couch_back")
 
 [node name="FrontArm" type="StaticBody3D" parent="Furniture/Couch"]
 position = Vector3(0.15, 0.53, -1.22)
-scale = Vector3(0.9, 0.68, 0.18)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Couch/FrontArm"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.9, 0.68, 0.18)
 surface_material_override/0 = SubResource("StandardMaterial3D_sofa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/FrontArm"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_couch_arm")
 
 [node name="BackArm" type="StaticBody3D" parent="Furniture/Couch"]
 position = Vector3(0.15, 0.53, 1.22)
-scale = Vector3(0.9, 0.68, 0.18)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Couch/BackArm"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.9, 0.68, 0.18)
 surface_material_override/0 = SubResource("StandardMaterial3D_sofa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/BackArm"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_couch_arm")
 
 [node name="CoffeeTable" type="Node3D" parent="Furniture"]
 position = Vector3(-1.85, 0, 0.55)
 
 [node name="Top" type="StaticBody3D" parent="Furniture/CoffeeTable"]
 position = Vector3(0, 0.42, 0)
-scale = Vector3(1.25, 0.12, 0.75)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CoffeeTable/Top"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1.25, 0.12, 0.75)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CoffeeTable/Top"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_coffee_table_top")
 
 [node name="LegFrontLeft" type="StaticBody3D" parent="Furniture/CoffeeTable"]
 position = Vector3(-0.5, 0.2, -0.28)
-scale = Vector3(0.08, 0.4, 0.08)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CoffeeTable/LegFrontLeft"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.08, 0.4, 0.08)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CoffeeTable/LegFrontLeft"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_coffee_table_leg")
 
 [node name="LegFrontRight" type="StaticBody3D" parent="Furniture/CoffeeTable"]
 position = Vector3(0.5, 0.2, -0.28)
-scale = Vector3(0.08, 0.4, 0.08)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CoffeeTable/LegFrontRight"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.08, 0.4, 0.08)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CoffeeTable/LegFrontRight"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_coffee_table_leg")
 
 [node name="LegBackLeft" type="StaticBody3D" parent="Furniture/CoffeeTable"]
 position = Vector3(-0.5, 0.2, 0.28)
-scale = Vector3(0.08, 0.4, 0.08)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CoffeeTable/LegBackLeft"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.08, 0.4, 0.08)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CoffeeTable/LegBackLeft"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_coffee_table_leg")
 
 [node name="LegBackRight" type="StaticBody3D" parent="Furniture/CoffeeTable"]
 position = Vector3(0.5, 0.2, 0.28)
-scale = Vector3(0.08, 0.4, 0.08)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CoffeeTable/LegBackRight"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(0.08, 0.4, 0.08)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CoffeeTable/LegBackRight"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_coffee_table_leg")
 
 [node name="Bookshelf" type="Node3D" parent="Furniture"]
 position = Vector3(-2.1, 0, -3.78)
 
 [node name="BackPanel" type="StaticBody3D" parent="Furniture/Bookshelf"]
 position = Vector3(0, 1.0, 0)
-scale = Vector3(1.55, 2.0, 0.14)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Bookshelf/BackPanel"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1.55, 2, 0.14)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Bookshelf/BackPanel"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_bookshelf_back")
 
 [node name="BottomShelf" type="StaticBody3D" parent="Furniture/Bookshelf"]
 position = Vector3(0, 0.25, 0.08)
-scale = Vector3(1.55, 0.12, 0.42)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Bookshelf/BottomShelf"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1.55, 0.12, 0.42)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Bookshelf/BottomShelf"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_bookshelf_bottom")
 
 [node name="MiddleShelf" type="StaticBody3D" parent="Furniture/Bookshelf"]
 position = Vector3(0, 0.9, 0.08)
-scale = Vector3(1.55, 0.1, 0.42)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Bookshelf/MiddleShelf"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1.55, 0.1, 0.42)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Bookshelf/MiddleShelf"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_bookshelf_shelf")
 
 [node name="TopShelf" type="StaticBody3D" parent="Furniture/Bookshelf"]
 position = Vector3(0, 1.55, 0.08)
-scale = Vector3(1.55, 0.1, 0.42)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/Bookshelf/TopShelf"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1.55, 0.1, 0.42)
 surface_material_override/0 = SubResource("StandardMaterial3D_dark_wood")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Bookshelf/TopShelf"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_bookshelf_shelf")
 
 [node name="BookStackA" type="MeshInstance3D" parent="Furniture/Bookshelf"]
 position = Vector3(-0.45, 0.58, 0.18)
@@ -362,47 +394,47 @@ position = Vector3(3.05, 0, -2.35)
 
 [node name="Base" type="StaticBody3D" parent="Furniture/CatTree"]
 position = Vector3(0, 0.06, 0)
-scale = Vector3(1.0, 0.12, 0.75)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CatTree/Base"]
 mesh = SubResource("BoxMesh_furniture_unit")
+scale = Vector3(1, 0.12, 0.75)
 surface_material_override/0 = SubResource("StandardMaterial3D_cat_tree_fabric")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CatTree/Base"]
-shape = SubResource("BoxShape3D_furniture_unit")
+shape = SubResource("BoxShape3D_cat_tree_base")
 
 [node name="ScratchPost" type="StaticBody3D" parent="Furniture/CatTree"]
 position = Vector3(0, 0.65, 0)
-scale = Vector3(0.11, 1.18, 0.11)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CatTree/ScratchPost"]
 mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.11, 1.18, 0.11)
 surface_material_override/0 = SubResource("StandardMaterial3D_scratch_post")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CatTree/ScratchPost"]
-shape = SubResource("CylinderShape3D_furniture_unit")
+shape = SubResource("CylinderShape3D_scratch_post")
 
 [node name="Perch" type="StaticBody3D" parent="Furniture/CatTree"]
 position = Vector3(0, 1.28, 0)
-scale = Vector3(0.42, 0.12, 0.42)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CatTree/Perch"]
 mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.42, 0.12, 0.42)
 surface_material_override/0 = SubResource("StandardMaterial3D_cat_tree_fabric")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CatTree/Perch"]
-shape = SubResource("CylinderShape3D_furniture_unit")
+shape = SubResource("CylinderShape3D_cat_tree_perch")
 
 [node name="SmallPerch" type="StaticBody3D" parent="Furniture/CatTree"]
 position = Vector3(-0.38, 0.78, 0.25)
-scale = Vector3(0.28, 0.1, 0.28)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Furniture/CatTree/SmallPerch"]
 mesh = SubResource("CylinderMesh_furniture_unit")
+scale = Vector3(0.28, 0.1, 0.28)
 surface_material_override/0 = SubResource("StandardMaterial3D_cat_tree_fabric")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/CatTree/SmallPerch"]
-shape = SubResource("CylinderShape3D_furniture_unit")
+shape = SubResource("CylinderShape3D_cat_tree_small_perch")
 
 [node name="Pillow" parent="." instance=ExtResource("2_pillow")]
 position = Vector3(-1.85, 0.08, -1.9)
