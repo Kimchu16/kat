@@ -10,11 +10,14 @@ const ACTION_ANIMATIONS: Dictionary = {
 	&"rest": &"Sleep",
 	&"play": &"Pounce",
 	&"explore": &"Run",
+	&"social": &"Idle",
+	&"avoid": &"Idle",
 }
 
 const LOCOMOTION_ANIMATION: StringName = &"Run"
 const JUMP_ANIMATION: StringName = &"Pounce"
 const ATTENTION_ANIMATION: StringName = &"AttentionCaught"
+const MAD_ANIMATION: StringName = &"Mad"
 const PHASE_ENTER: StringName = &"enter"
 const PHASE_IDLE: StringName = &"idle"
 const PHASE_EXIT: StringName = &"exit"
@@ -127,6 +130,14 @@ func play_attention_animation() -> void:
 
 	if animation_player.has_animation(ATTENTION_ANIMATION):
 		animation_player.play(ATTENTION_ANIMATION, 0.12)
+
+
+func play_mad_animation() -> void:
+	if animation_player == null:
+		return
+
+	if animation_player.has_animation(MAD_ANIMATION):
+		animation_player.play(MAD_ANIMATION, 0.08)
 
 
 func play_action_phase_animation(action: StringName, phase: StringName, blend: float) -> bool:
