@@ -1,6 +1,11 @@
-[gd_scene load_steps=5 format=4 uid="uid://6v6taocj1e5p"]
+[gd_scene load_steps=8 format=4 uid="uid://6v6taocj1e5p"]
 
 [ext_resource type="Texture2D" uid="uid://qieklpb52cdk" path="res://models/fish_0.png" id="1_qf5xn"]
+[ext_resource type="Script" uid="uid://bgm60fvm2m2tc" path="res://scripts/interactables/fish_treat.gd" id="2_treat"]
+[ext_resource type="Script" uid="uid://ckk7jep35yt25" path="res://addons/godot-xr-tools/objects/grab_points/grab_point.gd" id="3_grab_point"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_treat"]
+size = Vector3(0.36, 0.1, 0.25)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vkrqv"]
 resource_name = "Material"
@@ -42,9 +47,21 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_g2tlc")
 
-[node name="FishTreat" type="Node3D"]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+[node name="FishTreat" type="RigidBody3D" groups=["fish_treat"]]
+collision_layer = 4
+collision_mask = 196615
+mass = 0.06
+freeze_mode = 1
+script = ExtResource("2_treat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0.01, 0)
+shape = SubResource("BoxShape3D_treat")
+
+[node name="GrabPoint" type="Marker3D" parent="."]
+script = ExtResource("3_grab_point")
 
 [node name="Object_2" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.42, 0, 0, 0, 0.42, 0, 0, 0, 0.42, 0, 0, 0)
 mesh = SubResource("ArrayMesh_ihkcb")
 skeleton = NodePath("")

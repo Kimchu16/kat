@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://hj6fuqrm6sod"]
 
-[ext_resource type="Script" uid="uid://bk3grj2oo6b7g" path="res://scripts/cat_food_dispenser.gd" id="1_dispenser"]
+[ext_resource type="Script" uid="uid://bk3grj2oo6b7g" path="res://scripts/interactables/cat_food_dispenser.gd" id="1_dispenser"]
 [ext_resource type="Script" uid="uid://ckk7jep35yt25" path="res://addons/godot-xr-tools/objects/grab_points/grab_point.gd" id="2_grab_point"]
 [ext_resource type="AudioStream" uid="uid://3in17ggda180" path="res://audio/sfx/pour_kat_food.mp3" id="3_5403e"]
 
