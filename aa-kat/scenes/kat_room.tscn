@@ -1,4 +1,4 @@
-[gd_scene load_steps=66 format=4 uid="uid://0dd5tvevrmuw"]
+[gd_scene load_steps=94 format=4 uid="uid://0dd5tvevrmuw"]
 
 [ext_resource type="Texture2D" uid="uid://jvad4qki87o4" path="res://models/pillow_low_poly_0.png" id="2_g7r17"]
 [ext_resource type="Texture2D" uid="uid://dv43hshno5ryv" path="res://models/pillow_low_poly_1.png" id="3_ixvms"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://bcecue32gid04" path="res://scenes/ball.tscn" id="8_kesyf"]
 [ext_resource type="Script" uid="uid://b3xrlvyp3fow6" path="res://scripts/interactables/food_bowl.gd" id="9_food_bowl"]
 [ext_resource type="Script" uid="uid://dfsr343swjx06" path="res://scripts/interactables/fish_treat_spawner.gd" id="10_treat_spawner"]
+[ext_resource type="Script" uid="uid://b407vkcicgq55" path="res://scripts/audio/background_music_player.gd" id="11_bgm"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 2
@@ -20,8 +21,21 @@ ambient_light_source = 2
 ambient_light_color = Color(0.854902, 0.807843, 0.741176, 1)
 ambient_light_energy = 0.45
 
+[sub_resource type="Gradient" id="Gradient_floor_soft"]
+colors = PackedColorArray(0.88, 0.88, 0.88, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_floor"]
+frequency = 0.09
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_floor"]
+noise = SubResource("FastNoiseLite_floor")
+color_ramp = SubResource("Gradient_floor_soft")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.733333, 0.639216, 0.529412, 1)
+albedo_texture = SubResource("NoiseTexture2D_floor")
 roughness = 0.95
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
@@ -31,8 +45,22 @@ size = Vector3(8, 0.2, 8)
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(8, 0.2, 8)
 
+[sub_resource type="Gradient" id="Gradient_wall_soft"]
+colors = PackedColorArray(0.94, 0.94, 0.94, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wall"]
+frequency = 0.035
+fractal_octaves = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wall"]
+noise = SubResource("FastNoiseLite_wall")
+color_ramp = SubResource("Gradient_wall_soft")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
 albedo_color = Color(0.505882, 0.564706, 0.541176, 1)
+albedo_texture = SubResource("NoiseTexture2D_wall")
+roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall_ns"]
 material = SubResource("StandardMaterial3D_wall")
@@ -48,8 +76,22 @@ size = Vector3(0.2, 3.2, 8)
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
 size = Vector3(0.2, 3.2, 8)
 
+[sub_resource type="Gradient" id="Gradient_ceiling_soft"]
+colors = PackedColorArray(0.96, 0.96, 0.96, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ceiling"]
+frequency = 0.04
+fractal_octaves = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ceiling"]
+noise = SubResource("FastNoiseLite_ceiling")
+color_ramp = SubResource("Gradient_ceiling_soft")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ceiling"]
 albedo_color = Color(0.980392, 0.964706, 0.933333, 1)
+albedo_texture = SubResource("NoiseTexture2D_ceiling")
+roughness = 0.96
 
 [sub_resource type="BoxMesh" id="BoxMesh_ceiling"]
 material = SubResource("StandardMaterial3D_ceiling")
@@ -63,14 +105,31 @@ top_radius = 1.1
 bottom_radius = 1.1
 height = 0.04
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_rug"]
+frequency = 0.42
+fractal_octaves = 6
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_rug"]
+noise = SubResource("FastNoiseLite_rug")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rug"]
 albedo_color = Color(0.913725, 0.682353, 0.564706, 1)
+albedo_texture = SubResource("NoiseTexture2D_rug")
 roughness = 0.95
 
 [sub_resource type="BoxMesh" id="BoxMesh_furniture_unit"]
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_sofa"]
+frequency = 0.34
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_sofa"]
+noise = SubResource("FastNoiseLite_sofa")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sofa"]
 albedo_color = Color(0.560784, 0.321569, 0.247059, 1)
+albedo_texture = SubResource("NoiseTexture2D_sofa")
 roughness = 0.88
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_couch_seat"]
@@ -85,8 +144,17 @@ size = Vector3(0.9, 0.68, 0.18)
 [sub_resource type="BoxShape3D" id="BoxShape3D_couch_safety"]
 size = Vector3(1.45, 0.48720703, 2.85)
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wood"]
+frequency = 0.24
+fractal_octaves = 6
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wood"]
+noise = SubResource("FastNoiseLite_wood")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
 albedo_color = Color(0.282353, 0.184314, 0.121569, 1)
+albedo_texture = SubResource("NoiseTexture2D_wood")
 roughness = 0.82
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_coffee_table_top"]
@@ -104,12 +172,31 @@ size = Vector3(1.55, 0.12, 0.42)
 [sub_resource type="BoxShape3D" id="BoxShape3D_bookshelf_shelf"]
 size = Vector3(1.55, 0.1, 0.42)
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_books"]
+frequency = 0.5
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_books"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_books")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shelf_books"]
 albedo_color = Color(0.74902, 0.513725, 0.352941, 1)
+albedo_texture = SubResource("NoiseTexture2D_books")
 roughness = 0.9
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_cat_tree"]
+frequency = 0.38
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_cat_tree"]
+noise = SubResource("FastNoiseLite_cat_tree")
+seamless = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cat_tree_fabric"]
 albedo_color = Color(0.423529, 0.490196, 0.462745, 1)
+albedo_texture = SubResource("NoiseTexture2D_cat_tree")
 roughness = 0.96
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_cat_tree_base"]
@@ -120,8 +207,19 @@ top_radius = 1.0
 bottom_radius = 1.0
 height = 1.0
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_scratch_post"]
+frequency = 0.62
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_scratch_post"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_scratch_post")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scratch_post"]
 albedo_color = Color(0.662745, 0.572549, 0.431373, 1)
+albedo_texture = SubResource("NoiseTexture2D_scratch_post")
+roughness = 0.94
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_scratch_post"]
 height = 1.18
@@ -148,8 +246,17 @@ radius = 0.28
 height = 1.84
 radius = 0.035
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_lampshade"]
+frequency = 0.22
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_lampshade"]
+noise = SubResource("FastNoiseLite_lampshade")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lampshade"]
 albedo_color = Color(0.823529, 0.729412, 0.560784, 1)
+albedo_texture = SubResource("NoiseTexture2D_lampshade")
 roughness = 0.92
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_lampshade"]
@@ -264,8 +371,19 @@ bottom_radius = 0.66
 height = 0.13
 radial_segments = 28
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_kibble"]
+frequency = 0.85
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_kibble"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_kibble")
+seamless = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
 albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
+albedo_texture = SubResource("NoiseTexture2D_kibble")
 roughness = 0.86
 
 [sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
@@ -273,6 +391,29 @@ radius = 0.12
 height = 0.24
 radial_segments = 12
 rings = 6
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_bowl_crumbs"]
+direction = Vector3(0, 0, 1)
+spread = 180.0
+initial_velocity_min = 0.08
+initial_velocity_max = 0.2
+angular_velocity_min = -100.0
+angular_velocity_max = 100.0
+gravity = Vector3(0, 0, -0.35)
+radial_accel_min = 0.15
+radial_accel_max = 0.45
+damping_min = 0.5
+damping_max = 1.1
+scale_min = 0.5
+scale_max = 0.9
+color = Color(0.462745, 0.235294, 0.0901961, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_bowl_crumb"]
+material = SubResource("StandardMaterial3D_kibble")
+radius = 0.012
+height = 0.024
+radial_segments = 8
+rings = 4
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_water_surface"]
 top_radius = 0.72
@@ -290,11 +431,21 @@ roughness = 0.12
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_1")
 
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="."]
+volume_db = -16.0
+script = ExtResource("11_bgm")
+
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.88294756, 0.3488854, -0.3141378, 0, 0.66913056, 0.74314487, 0.46947157, -0.656158, 0.5908072, 0, 3, 0)
 light_color = Color(1, 0.956863, 0.878431, 1)
 light_energy = 1.1
 shadow_enabled = true
+
+[node name="InvisibleRoomFillLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+light_color = Color(1, 0.933333, 0.839216, 1)
+light_energy = 0.32
+omni_range = 7.6
 
 [node name="PreviewCamera" type="Camera3D" parent="."]
 transform = Transform3D(-1, 1.8176218e-08, -8.551238e-08, 0, 0.9781476, 0.2079117, 8.742278e-08, 0.2079117, -0.9781476, 0, 2.15, 5.7)
@@ -655,8 +806,8 @@ surface_material_override/0 = SubResource("StandardMaterial3D_lamp_bulb")
 [node name="LampLight" type="OmniLight3D" parent="Furniture/TallLamp"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.82, 0)
 light_color = Color(1, 0.878431, 0.741176, 1)
-light_energy = 1.807
-omni_range = 6.5
+light_energy = 2.45
+omni_range = 7.2
 
 [node name="Pillow" type="Node3D" parent="Furniture"]
 transform = Transform3D(0.043301273, -0.024999999, -1.0927846e-09, 0, -2.1855695e-09, 0.05, -0.024999999, -0.043301273, -1.8927586e-09, 1.2323102, -0.12727518, -1.9)
@@ -721,6 +872,16 @@ surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 transform = Transform3D(10, 0, 0, 0, 10, 5.684342e-14, 0, -5.684342e-14, 10, 0.038986206, -3.483564e-08, 0.7969465)
 stream = ExtResource("7_e5nar")
 volume_db = 5.0
+
+[node name="EatingCrumbs" type="GPUParticles3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(10, 0, 0, 0, 10, 5.684342e-14, 0, -5.684342e-14, 10, 0.038986206, -3.483564e-08, 0.7969465)
+emitting = false
+amount = 40
+lifetime = 0.5
+randomness = 0.45
+visibility_aabb = AABB(-0.35, -0.35, -0.2, 0.7, 0.7, 0.55)
+process_material = SubResource("ParticleProcessMaterial_bowl_crumbs")
+draw_pass_1 = SubResource("SphereMesh_bowl_crumb")
 
 [node name="Water Bowl" type="Node3D" parent="Furniture"]
 transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09, 3.221286, 0.104331255, 0.46193564)

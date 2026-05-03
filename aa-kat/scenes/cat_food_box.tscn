@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://hj6fuqrm6sod"]
+[gd_scene load_steps=21 format=3 uid="uid://hj6fuqrm6sod"]
 
 [ext_resource type="Script" uid="uid://bk3grj2oo6b7g" path="res://scripts/interactables/cat_food_dispenser.gd" id="1_dispenser"]
 [ext_resource type="Script" uid="uid://ckk7jep35yt25" path="res://addons/godot-xr-tools/objects/grab_points/grab_point.gd" id="2_grab_point"]
@@ -7,8 +7,54 @@
 [sub_resource type="BoxShape3D" id="BoxShape3D_dispenser"]
 size = Vector3(0.3, 0.44, 0.16)
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_bag_card"]
+frequency = 0.14
+fractal_octaves = 2
+
+[sub_resource type="Gradient" id="Gradient_bag_card_soft"]
+offsets = PackedFloat32Array(0.0, 1.0)
+colors = PackedColorArray(0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_bag_card"]
+width = 256
+height = 256
+seamless = true
+color_ramp = SubResource("Gradient_bag_card_soft")
+noise = SubResource("FastNoiseLite_bag_card")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_label_paper"]
+frequency = 0.08
+fractal_octaves = 2
+
+[sub_resource type="Gradient" id="Gradient_label_paper_soft"]
+offsets = PackedFloat32Array(0.0, 1.0)
+colors = PackedColorArray(0.94, 0.94, 0.94, 1.0, 1.0, 1.0, 1.0, 1.0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_label_paper"]
+width = 256
+height = 256
+seamless = true
+color_ramp = SubResource("Gradient_label_paper_soft")
+noise = SubResource("FastNoiseLite_label_paper")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_box_kibble"]
+frequency = 0.35
+fractal_octaves = 2
+
+[sub_resource type="Gradient" id="Gradient_box_kibble_soft"]
+offsets = PackedFloat32Array(0.0, 1.0)
+colors = PackedColorArray(0.88, 0.88, 0.88, 1.0, 1.0, 1.0, 1.0, 1.0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_box_kibble"]
+width = 128
+height = 128
+seamless = true
+color_ramp = SubResource("Gradient_box_kibble_soft")
+noise = SubResource("FastNoiseLite_box_kibble")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bag"]
 albedo_color = Color(0.12549, 0.364706, 0.282353, 1)
+albedo_texture = SubResource("NoiseTexture2D_bag_card")
 roughness = 0.82
 
 [sub_resource type="BoxMesh" id="BoxMesh_bag_body"]
@@ -17,6 +63,7 @@ size = Vector3(0.28, 0.42, 0.14)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_label"]
 albedo_color = Color(0.933333, 0.823529, 0.596078, 1)
+albedo_texture = SubResource("NoiseTexture2D_label_paper")
 roughness = 0.78
 
 [sub_resource type="BoxMesh" id="BoxMesh_label"]
@@ -25,6 +72,7 @@ size = Vector3(0.19, 0.14, 0.012)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
 albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
+albedo_texture = SubResource("NoiseTexture2D_box_kibble")
 roughness = 0.86
 
 [sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
