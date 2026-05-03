@@ -1,4 +1,4 @@
-[gd_scene load_steps=55 format=4 uid="uid://0dd5tvevrmuw"]
+[gd_scene load_steps=65 format=4 uid="uid://0dd5tvevrmuw"]
 
 [ext_resource type="Texture2D" uid="uid://jvad4qki87o4" path="res://models/pillow_low_poly_0.png" id="2_g7r17"]
 [ext_resource type="Texture2D" uid="uid://dv43hshno5ryv" path="res://models/pillow_low_poly_1.png" id="3_ixvms"]
@@ -6,8 +6,11 @@
 [ext_resource type="Texture2D" uid="uid://do2602wxnbmhy" path="res://models/bowl_of_food_for_cat_0.png" id="5_e5nar"]
 [ext_resource type="PackedScene" uid="uid://du6x4vb23erxs" path="res://scenes/quest_vr_player.tscn" id="6_vr_player"]
 [ext_resource type="PackedScene" uid="uid://b8qlymlaoh6pg" path="res://scenes/Kat.tscn" id="7_8sno8"]
+[ext_resource type="AudioStream" uid="uid://c6gy4pxhfmos3" path="res://audio/sfx/cat-eating.mp3" id="7_e5nar"]
+[ext_resource type="PackedScene" uid="uid://hj6fuqrm6sod" path="res://scenes/cat_food_box.tscn" id="7_trb1s"]
 [ext_resource type="PackedScene" uid="uid://6v6taocj1e5p" path="res://scenes/fish_treat.tscn" id="8_g7r17"]
 [ext_resource type="PackedScene" uid="uid://bcecue32gid04" path="res://scenes/ball.tscn" id="8_kesyf"]
+[ext_resource type="Script" uid="uid://b3xrlvyp3fow6" path="res://scripts/food_bowl.gd" id="9_food_bowl"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 2
@@ -77,6 +80,9 @@ size = Vector3(0.22, 0.95, 2.45)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_couch_arm"]
 size = Vector3(0.9, 0.68, 0.18)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_couch_safety"]
+size = Vector3(1.45, 0.48720703, 2.85)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
 albedo_color = Color(0.282353, 0.184314, 0.121569, 1)
@@ -210,6 +216,9 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_i34eq")
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_pillow_collision"]
+size = Vector3(20.367489, 20.408909, 7.0229073)
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l6lom"]
 resource_name = "Materil.030"
 cull_mode = 2
@@ -248,6 +257,33 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_4nopm")
 
+[sub_resource type="CylinderMesh" id="CylinderMesh_food_mound"]
+top_radius = 0.56
+bottom_radius = 0.66
+height = 0.13
+radial_segments = 28
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
+albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
+roughness = 0.86
+
+[sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
+radius = 0.12
+height = 0.24
+radial_segments = 12
+rings = 6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_water_surface"]
+top_radius = 0.72
+bottom_radius = 0.72
+height = 0.025
+radial_segments = 40
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_water_surface"]
+transparency = 1
+albedo_color = Color(0.176471, 0.533333, 0.811765, 0.62)
+roughness = 0.12
+
 [node name="KatRoom" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -270,6 +306,32 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.6)
 
 [node name="KatSpawn" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.2)
+
+[node name="KatTargets" type="Node3D" parent="."]
+
+[node name="FoodTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1212676, 0, -0.050631374)
+
+[node name="RestTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7138033, 0.4252332, -2.971556)
+
+[node name="PillowTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7138033, 0.4252332, -2.971556)
+
+[node name="ExploreTargetA" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55, 0, -2.1)
+
+[node name="ExploreTargetB" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.45, 0, -2.35)
+
+[node name="CouchTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.07, 0.52, 0.55)
+
+[node name="CatTreeSmallTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.67, 0.88, -2.1)
+
+[node name="CatTreePerchTarget" type="Marker3D" parent="KatTargets"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.05, 1.38, -2.35)
 
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
@@ -378,6 +440,13 @@ surface_material_override/0 = SubResource("StandardMaterial3D_sofa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/BackArm"]
 shape = SubResource("BoxShape3D_couch_arm")
+
+[node name="CouchSafetyZone" type="StaticBody3D" parent="Furniture/Couch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Couch/CouchSafetyZone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.23139648, 0)
+shape = SubResource("BoxShape3D_couch_safety")
 
 [node name="CoffeeTable" type="Node3D" parent="Furniture"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, 0.55)
@@ -596,12 +665,61 @@ transform = Transform3D(0.9999999, -5.9604645e-08, -1.7763568e-15, 5.9604645e-08
 mesh = SubResource("ArrayMesh_msitv")
 skeleton = NodePath("")
 
+[node name="PillowCollision" type="StaticBody3D" parent="Furniture/Pillow"]
+transform = Transform3D(0.9999999, -5.9604645e-08, -1.7763568e-15, 5.9604645e-08, 0.9999999, 1.0658141e-14, 3.5527137e-15, 7.1054274e-15, 0.9999998, 1.4069557, 23.263773, 9.536743e-07)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Furniture/Pillow/PillowCollision"]
+transform = Transform3D(0.9999999, -2.9802322e-08, -7.1054274e-15, 2.9802322e-08, 0.9999999, -3.5527137e-15, -2.7888802e-13, -1.0658141e-14, 0.9999998, -0.060760498, 0.0016555786, 4.511453)
+shape = SubResource("BoxShape3D_pillow_collision")
+
 [node name="Food Bowl" type="Node3D" parent="Furniture"]
 transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09, 3.221286, 0.104331255, 0)
+script = ExtResource("9_food_bowl")
+
+[node name="FillTarget" type="Marker3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.8920201e-08, 0.6616173)
 
 [node name="Food Bowl_Materi��l_030_0" type="MeshInstance3D" parent="Furniture/Food Bowl"]
 mesh = SubResource("ArrayMesh_r47vm")
 skeleton = NodePath("")
+
+[node name="FoodFull" type="Node3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.8920201e-08, 0.6616173)
+
+[node name="KibbleMound" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.47)
+mesh = SubResource("CylinderMesh_food_mound")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibblePieceA" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2800007, -0.20000002, -0.22865653)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibblePieceB" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22000122, -0.24000001, -0.30849695)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibblePieceC" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.060001373, 0.18, -0.25071895)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibblePieceD" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.30999756, 0.11999999, -0.35884094)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibblePieceE" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33999825, 0.13999999, -0.326025)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KatEating" type="AudioStreamPlayer3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(10, 0, 0, 0, 10, 5.684342e-14, 0, -5.684342e-14, 10, 0.038986206, -3.483564e-08, 0.7969465)
+stream = ExtResource("7_e5nar")
+volume_db = 5.0
 
 [node name="Water Bowl" type="Node3D" parent="Furniture"]
 transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09, 3.221286, 0.104331255, 0.46193564)
@@ -610,10 +728,21 @@ transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09
 mesh = SubResource("ArrayMesh_r47vm")
 skeleton = NodePath("")
 
+[node name="WaterSurface" type="MeshInstance3D" parent="Furniture/Water Bowl"]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0.20923197)
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_water_surface")
+surface_material_override/0 = SubResource("StandardMaterial3D_water_surface")
+
+[node name="FoodBox" parent="Furniture" instance=ExtResource("7_trb1s")]
+transform = Transform3D(0.53934395, 0, 0.8420855, 0, 1, 0, -0.8420855, 0, 0.53934395, -1.6270064, 0.7086394, 0.5286428)
+
 [node name="Kat" parent="." instance=ExtResource("7_8sno8")]
 
 [node name="Ball" parent="." instance=ExtResource("8_kesyf")]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, -1.173331, 0.13506031, 1.622466)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.173331, 0.13506031, 1.622466)
+
+[node name="PlayTarget" type="Marker3D" parent="Ball"]
 
 [node name="FishTreat" parent="." instance=ExtResource("8_g7r17")]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 2.0170693, 0, 0)

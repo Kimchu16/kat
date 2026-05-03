@@ -3,31 +3,39 @@ extends RefCounted
 
 signal changed(snapshot: Dictionary)
 
-const MIN_VALUE := 0.0
-const MAX_VALUE := 1.0
+# Tiny need model for Kat. Higher hunger means "more hungry"; higher play means
+# "more satisfied with play", so play slowly drops over time.
 
-var hunger := 0.32
-var energy := 0.82
-var play := 0.62
-var affection := 0.46
-var curiosity := 0.58
-var trust := 0.50
-var stress := 0.08
-var last_interaction_age := 0.0
+const MIN_VALUE: float = 0.0
+const MAX_VALUE: float = 1.0
+
+var hunger: float = 0.32
+var energy: float = 0.82
+var play: float = 0.62
+var affection: float = 0.46
+var curiosity: float = 0.58
+var trust: float = 0.50
+var stress: float = 0.08
+var last_interaction_age: float = 0.0
 
 
-func tick(delta: float) -> void:
-	hunger = _bounded(hunger + 0.030 * delta)
-	energy = _bounded(energy - (0.012 + stress * 0.010) * delta)
-	play = _bounded(play - 0.020 * delta)
-	affection = _bounded(affection - 0.008 * delta)
-	curiosity = _bounded(curiosity + 0.010 * delta)
-	stress = _bounded(stress - 0.020 * delta)
+func tick(delta: float, is_playing: bool = false) -> void:
+	# These rates are deliberately small so the cat changes mood over minutes,
+	# not every few seconds.
+	hunger = _bounded(hunger + 0.018 * delta)
+	energy = _bounded(energy - (0.007 + stress * 0.006) * delta)
+	# Do not drain play during the play state, otherwise the reward from chasing
+	# the ball gets cancelled out and Kat keeps choosing play again.
+	if not is_playing:
+		play = _bounded(play - 0.010 * delta)
+	affection = _bounded(affection - 0.004 * delta)
+	curiosity = _bounded(curiosity + 0.006 * delta)
+	stress = _bounded(stress - 0.012 * delta)
 	last_interaction_age += delta
 	changed.emit(snapshot())
 
 
-func feed(amount := 0.42) -> void:
+func feed(amount: float = 0.42) -> void:
 	hunger = _bounded(hunger - amount)
 	energy = _bounded(energy + amount * 0.10)
 	trust = _bounded(trust + amount * 0.14)
@@ -37,7 +45,7 @@ func feed(amount := 0.42) -> void:
 	changed.emit(snapshot())
 
 
-func play_with(amount := 0.34) -> void:
+func play_with(amount: float = 0.34) -> void:
 	play = _bounded(play + amount)
 	curiosity = _bounded(curiosity + amount * 0.20)
 	affection = _bounded(affection + amount * 0.12)
@@ -47,7 +55,7 @@ func play_with(amount := 0.34) -> void:
 	changed.emit(snapshot())
 
 
-func pet(amount := 0.25) -> void:
+func pet(amount: float = 0.25) -> void:
 	affection = _bounded(affection + amount)
 	trust = _bounded(trust + amount * 0.18)
 	stress = _bounded(stress - amount * 0.20)
@@ -55,7 +63,7 @@ func pet(amount := 0.25) -> void:
 	changed.emit(snapshot())
 
 
-func startle(amount := 0.28) -> void:
+func startle(amount: float = 0.28) -> void:
 	stress = _bounded(stress + amount)
 	trust = _bounded(trust - amount * 0.12)
 	affection = _bounded(affection - amount * 0.05)
@@ -65,7 +73,7 @@ func startle(amount := 0.28) -> void:
 
 func rest(delta: float) -> void:
 	energy = _bounded(energy + 0.130 * delta)
-	play = _bounded(play - 0.006 * delta)
+	play = _bounded(play - 0.003 * delta)
 	stress = _bounded(stress - 0.050 * delta)
 	changed.emit(snapshot())
 
@@ -78,8 +86,8 @@ func nibble(delta: float) -> void:
 
 func chase(delta: float) -> void:
 	play = _bounded(play + 0.060 * delta)
-	energy = _bounded(energy - 0.045 * delta)
-	curiosity = _bounded(curiosity - 0.035 * delta)
+	energy = _bounded(energy - 0.025 * delta)
+	curiosity = _bounded(curiosity - 0.018 * delta)
 	changed.emit(snapshot())
 
 
@@ -91,6 +99,7 @@ func socialise(delta: float) -> void:
 
 
 func dominant_need() -> StringName:
+	# Order matters here. Hunger/tiredness should override less urgent moods.
 	if hunger > 0.76:
 		return &"hungry"
 	if energy < 0.30:
@@ -107,7 +116,7 @@ func dominant_need() -> StringName:
 
 
 func mood() -> StringName:
-	var need := dominant_need()
+	var need: StringName = dominant_need()
 	match need:
 		&"hungry":
 			return &"hungry"
@@ -140,4 +149,4 @@ func snapshot() -> Dictionary:
 
 
 func _bounded(value: float) -> float:
-	return clamp(value, MIN_VALUE, MAX_VALUE)
+	return clampf(value, MIN_VALUE, MAX_VALUE)

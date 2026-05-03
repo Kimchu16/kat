@@ -1,9 +1,12 @@
-[gd_scene load_steps=10 format=4 uid="uid://bcecue32gid04"]
+[gd_scene load_steps=11 format=4 uid="uid://bcecue32gid04"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yxwc4"]
 resource_name = "lambert2"
 cull_mode = 2
 roughness = 0.6
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
+radius = 0.095
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_4deih"]
 _surfaces = [{
@@ -115,10 +118,18 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_o76oo")
 
-[node name="Ball" type="Node3D"]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+[node name="Ball" type="RigidBody3D"]
+collision_layer = 2
+collision_mask = 3
+mass = 0.35
+linear_damp = 0.8
+angular_damp = 0.55
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_ball")
 
 [node name="pSolid1" type="Node3D" parent="."]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
 
 [node name="pSolid1_lambert2_0" type="MeshInstance3D" parent="pSolid1"]
 mesh = SubResource("ArrayMesh_n1dj2")
@@ -129,6 +140,7 @@ mesh = SubResource("ArrayMesh_7s4qf")
 skeleton = NodePath("")
 
 [node name="pSolid2" type="Node3D" parent="."]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
 
 [node name="pSolid2_lambert1_0" type="MeshInstance3D" parent="pSolid2"]
 mesh = SubResource("ArrayMesh_cxlvu")

@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 .nomedia
+aa-kat/android/
 
 # Godot-specific ignores
 .import/
