@@ -6,6 +6,7 @@ extends Node3D
 
 @export var autonomy_enabled: bool = true
 @export var target_root_path: NodePath = NodePath("../KatTargets")
+@export var food_bowl_path: NodePath = NodePath("../Furniture/Food Bowl")
 
 # Movement values are kept here so they can still be tweaked from the Kat scene.
 @export var move_speed: float = 0.85
@@ -62,6 +63,7 @@ var needs: KatNeeds = KatNeeds.new()
 var current_state: StringName = &"idle"
 
 var _target_node: Node3D
+var _food_bowl: Node
 var _target_selector: Variant = KAT_TARGET_SELECTOR_SCRIPT.new()
 var _navigator: Variant = KAT_NAVIGATOR_SCRIPT.new()
 var _animation_driver: Variant = KAT_ANIMATION_DRIVER_SCRIPT.new()
@@ -72,6 +74,7 @@ var _state_fatigue: Dictionary = {}
 var _state_history: Array[StringName] = []
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
+var _eat_bowl_emptied: bool = false
 var _play_reengage_timer: float = 0.0
 var _has_reached_target: bool = true
 var _is_exiting_state: bool = false
@@ -80,6 +83,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 func _ready() -> void:
 	_rng.randomize()
+	_food_bowl = get_node_or_null(food_bowl_path)
 	_animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
 	if _animation_player != null:
 		_animation_player.animation_finished.connect(_on_animation_finished)
@@ -183,6 +187,7 @@ func _choose_next_state() -> void:
 	current_state = selected_state
 	_target_node = _target_selector.get_target_for_action(current_state, true)
 	_pounce_impulse_sent = false
+	_eat_bowl_emptied = false
 	_play_reengage_timer = 0.0
 	_is_exiting_state = false
 	_has_reached_target = _target_node == null
@@ -212,7 +217,11 @@ func _score_actions() -> Dictionary:
 
 
 func _action_is_available(action: StringName) -> bool:
-	return _target_selector.action_is_available(action)
+	if not _target_selector.action_is_available(action):
+		return false
+	if action == &"eat":
+		return _food_bowl_has_food()
+	return true
 
 
 func _sample_next_state(scored_actions: Dictionary) -> StringName:
@@ -312,6 +321,9 @@ func _decision_window_for_state(action: StringName) -> float:
 func _apply_arrival_effects(delta: float) -> void:
 	match current_state:
 		&"eat":
+			if not _eat_bowl_emptied:
+				_empty_food_bowl()
+				_eat_bowl_emptied = true
 			needs.nibble(delta)
 		&"rest":
 			needs.rest(delta)
@@ -362,6 +374,19 @@ func _play_target_horizontal_distance() -> float:
 		target_position.x - global_position.x,
 		target_position.z - global_position.z
 	).length()
+
+
+func _food_bowl_has_food() -> bool:
+	if _food_bowl == null:
+		return true
+	if _food_bowl.has_method(&"has_food_available"):
+		return bool(_food_bowl.call(&"has_food_available"))
+	return true
+
+
+func _empty_food_bowl() -> void:
+	if _food_bowl != null and _food_bowl.has_method(&"empty_bowl"):
+		_food_bowl.call(&"empty_bowl")
 
 
 func catch_attention(source: Node3D = null) -> void:
