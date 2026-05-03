@@ -14,7 +14,8 @@ extends Node3D
 @export var complaint_audio_stream: AudioStream = preload("res://audio/sfx/cat-complaint.mp3")
 @export var complaint_audio_volume_db: float = 4.0
 @export var hungry_beg_threshold: float = 0.62
-@export var begging_follow_resume_distance: float = 0.85
+@export var begging_sit_distance: float = 1.05
+@export var begging_follow_resume_distance: float = 1.35
 
 # Movement values are kept here so they can still be tweaked from the Kat scene.
 @export var move_speed: float = 0.85
@@ -38,6 +39,9 @@ extends Node3D
 @export var ball_play_bounds_max: Vector2 = Vector2(3.15, 3.15)
 @export var ball_edge_turn_margin: float = 0.55
 @export_range(0.0, 1.0, 0.05) var ball_inward_push_bias: float = 0.85
+@export var ball_obstacle_avoidance_distance: float = 0.9
+@export_range(0.0, 1.0, 0.05) var ball_obstacle_avoidance_bias: float = 0.8
+@export var ball_obstacle_avoidance_mask: int = 1
 @export var wall_avoidance_distance: float = 0.95
 @export var wall_avoidance_strength: float = 0.75
 @export var explore_wander_radius: float = 0.45
@@ -140,7 +144,7 @@ func _process(delta: float) -> void:
 			_has_reached_target = true
 			_decision_timer = _decision_window_for_state(current_state)
 			if _is_begging_for_food:
-				_animation_driver.play_idle_animation()
+				_play_begging_wait_animation(delta)
 			else:
 				_play_state_animation()
 			_apply_arrival_effects(delta)
@@ -228,7 +232,7 @@ func _choose_next_state() -> void:
 	_decision_timer = _decision_window_for_state(current_state)
 	if _has_reached_target:
 		if _is_begging_for_food:
-			_animation_driver.play_idle_animation()
+			_play_begging_wait_animation(1.0)
 		else:
 			_play_state_animation()
 	else:
@@ -436,17 +440,20 @@ func _begin_food_begging() -> void:
 		_target_node = null
 		_has_reached_target = true
 		_navigator.clear()
-		_animation_driver.play_idle_animation()
+		_play_begging_wait_animation(1.0)
 		return
 
 	if _target_node != user_target:
 		_target_node = user_target
-		_has_reached_target = false
-		_navigator.begin_target_movement(_target_node)
-		_play_locomotion_animation()
+		if _horizontal_distance_to_node(_target_node) <= begging_sit_distance:
+			_stop_begging_follow()
+		else:
+			_has_reached_target = false
+			_navigator.begin_target_movement(_target_node)
+			_play_locomotion_animation()
 
 
-func _update_food_begging(_delta: float) -> bool:
+func _update_food_begging(delta: float) -> bool:
 	if current_state != &"eat":
 		return false
 
@@ -473,19 +480,41 @@ func _update_food_begging(_delta: float) -> bool:
 			_navigator.begin_target_movement(_target_node)
 
 	if _target_node == null:
-		_animation_driver.play_idle_animation()
+		_play_begging_wait_animation(delta)
 		return true
 
-	if _has_reached_target and _horizontal_distance_to_node(_target_node) > begging_follow_resume_distance:
+	var player_distance: float = _horizontal_distance_to_node(_target_node)
+	if player_distance <= begging_sit_distance:
+		_stop_begging_follow()
+		_play_begging_wait_animation(delta)
+		return true
+
+	var resume_distance: float = maxf(begging_follow_resume_distance, begging_sit_distance + 0.15)
+	if _has_reached_target and player_distance > resume_distance:
 		_has_reached_target = false
 		_navigator.begin_target_movement(_target_node)
 		_play_locomotion_animation()
 		return true
 
 	if _has_reached_target:
-		_animation_driver.play_idle_animation()
+		_play_begging_wait_animation(delta)
+		return true
 
 	return false
+
+
+func _stop_begging_follow() -> void:
+	_has_reached_target = true
+	_navigator.clear()
+
+
+func _play_begging_wait_animation(delta: float) -> void:
+	if _target_node != null and is_instance_valid(_target_node):
+		var look_direction: Vector3 = _target_node.global_position - global_position
+		look_direction.y = 0.0
+		_navigator.face_direction(look_direction, maxf(delta, 0.016))
+
+	_animation_driver.play_sit_wait_animation()
 
 
 func _resume_eating_after_refill() -> void:
@@ -581,9 +610,14 @@ func _push_ball(ball: RigidBody3D) -> void:
 	if impulse_direction.length_squared() < 0.001:
 		impulse_direction = _navigator.get_visual_forward_direction() + Vector3.UP * 0.08
 
-	# Keep pounces from sending the ball straight into the walls every time.
-	impulse_direction = _steer_ball_impulse_from_bounds(ball.global_position, impulse_direction)
+	# Keep pounces from sending the ball straight into walls or furniture.
+	impulse_direction = _steer_ball_impulse(ball, impulse_direction)
 	ball.apply_central_impulse(impulse_direction.normalized() * pounce_impulse)
+
+
+func _steer_ball_impulse(ball: RigidBody3D, impulse_direction: Vector3) -> Vector3:
+	var steered_impulse: Vector3 = _steer_ball_impulse_from_bounds(ball.global_position, impulse_direction)
+	return _steer_ball_impulse_from_obstacles(ball, steered_impulse)
 
 
 func _steer_ball_impulse_from_bounds(ball_position: Vector3, impulse_direction: Vector3) -> Vector3:
@@ -611,6 +645,61 @@ func _steer_ball_impulse_from_bounds(ball_position: Vector3, impulse_direction: 
 			horizontal_impulse = inward_normal
 
 	return Vector3(horizontal_impulse.x, impulse_direction.y, horizontal_impulse.z)
+
+
+func _steer_ball_impulse_from_obstacles(ball: RigidBody3D, impulse_direction: Vector3) -> Vector3:
+	var horizontal_impulse: Vector3 = Vector3(impulse_direction.x, 0.0, impulse_direction.z)
+	if ball == null or horizontal_impulse.length_squared() < 0.001:
+		return impulse_direction
+
+	var avoidance: Vector3 = _ball_obstacle_avoidance_vector(ball, horizontal_impulse.normalized())
+	if avoidance.length_squared() < 0.001:
+		return impulse_direction
+
+	var steer_amount: float = clampf(ball_obstacle_avoidance_bias, 0.0, 1.0)
+	horizontal_impulse = horizontal_impulse.normalized().lerp(avoidance.normalized(), steer_amount)
+	if horizontal_impulse.length_squared() < 0.001:
+		horizontal_impulse = avoidance.normalized()
+
+	return Vector3(horizontal_impulse.x, impulse_direction.y, horizontal_impulse.z)
+
+
+func _ball_obstacle_avoidance_vector(ball: RigidBody3D, direction: Vector3) -> Vector3:
+	var world: World3D = get_world_3d()
+	if world == null or direction.length_squared() < 0.001 or ball_obstacle_avoidance_distance <= 0.0:
+		return Vector3.ZERO
+
+	var origin: Vector3 = ball.global_position + Vector3.UP * 0.08
+	var feeler: Vector3 = direction.normalized() * ball_obstacle_avoidance_distance
+	var rays: Array[Vector3] = [
+		feeler,
+		Quaternion(Vector3.UP, deg_to_rad(22.0)) * feeler,
+		Quaternion(Vector3.UP, deg_to_rad(-22.0)) * feeler,
+	]
+
+	var avoidance: Vector3 = Vector3.ZERO
+	for ray in rays:
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, origin + ray)
+		query.collision_mask = ball_obstacle_avoidance_mask
+		query.collide_with_areas = false
+		query.collide_with_bodies = true
+		query.exclude = [ball.get_rid()]
+
+		var hit: Dictionary = world.direct_space_state.intersect_ray(query)
+		if hit.is_empty():
+			continue
+
+		var hit_position: Vector3 = hit.get("position", origin) as Vector3
+		var hit_normal: Vector3 = hit.get("normal", Vector3.ZERO) as Vector3
+		hit_normal.y = 0.0
+		if hit_normal.length_squared() < 0.001:
+			continue
+
+		var hit_distance: float = origin.distance_to(hit_position)
+		var proximity: float = clampf(1.0 - (hit_distance / ball_obstacle_avoidance_distance), 0.0, 1.0)
+		avoidance += hit_normal.normalized() * maxf(proximity, 0.25)
+
+	return avoidance
 
 
 func _on_pounce_hitbox_body_entered(body: Node3D) -> void:
@@ -731,6 +820,9 @@ func _make_audio_stream_loop(player: AudioStreamPlayer3D) -> void:
 
 
 func _on_animation_finished(animation_name: StringName) -> void:
+	if _is_begging_for_food and _animation_driver.continue_sit_wait_animation(animation_name):
+		return
+
 	if _is_exiting_state and _animation_driver.animation_matches_phase(current_state, PHASE_EXIT, animation_name):
 		_is_exiting_state = false
 		_choose_next_state()

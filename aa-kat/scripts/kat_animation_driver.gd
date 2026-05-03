@@ -24,6 +24,11 @@ const PHASED_ACTION_ANIMATIONS: Dictionary = {
 		PHASE_IDLE: &"Sleep_Idle",
 		PHASE_EXIT: &"Sleep_Exit",
 	},
+	&"sit": {
+		PHASE_ENTER: &"Sit_Enter",
+		PHASE_IDLE: &"Sit_Idle",
+		PHASE_EXIT: &"Sit_Exit",
+	},
 }
 
 var animation_player: AnimationPlayer
@@ -75,6 +80,45 @@ func play_idle_animation() -> void:
 	if animation_player.has_animation(&"Idle"):
 		if StringName(animation_player.current_animation) != &"Idle" or not animation_player.is_playing():
 			animation_player.play(&"Idle", 0.15)
+
+
+func play_sit_wait_animation() -> void:
+	if animation_player == null:
+		return
+
+	var enter_animation: StringName = get_action_phase_animation(&"sit", PHASE_ENTER)
+	var idle_animation: StringName = get_action_phase_animation(&"sit", PHASE_IDLE)
+	var current_animation: StringName = StringName(animation_player.current_animation)
+
+	if current_animation == enter_animation and animation_player.is_playing():
+		return
+	if current_animation == idle_animation:
+		if not animation_player.is_playing():
+			animation_player.play(idle_animation, 0.0)
+		return
+
+	if enter_animation != &"" and animation_player.has_animation(enter_animation):
+		animation_player.play(enter_animation, 0.15)
+	elif idle_animation != &"" and animation_player.has_animation(idle_animation):
+		animation_player.play(idle_animation, 0.15)
+	else:
+		play_idle_animation()
+
+
+func continue_sit_wait_animation(animation_name: StringName) -> bool:
+	var enter_animation: StringName = get_action_phase_animation(&"sit", PHASE_ENTER)
+	var idle_animation: StringName = get_action_phase_animation(&"sit", PHASE_IDLE)
+
+	if animation_name == enter_animation:
+		if not play_action_phase_animation(&"sit", PHASE_IDLE, 0.12):
+			play_idle_animation()
+		return true
+
+	if animation_name == idle_animation:
+		play_action_phase_animation(&"sit", PHASE_IDLE, 0.0)
+		return true
+
+	return false
 
 
 func play_attention_animation() -> void:
