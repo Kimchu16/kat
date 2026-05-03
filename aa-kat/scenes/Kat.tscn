@@ -3032,6 +3032,36 @@ visibility_aabb = AABB(-0.45, -0.25, -0.45, 0.9, 0.65, 0.9)
 process_material = SubResource("ParticleProcessMaterial_treat_crumbs")
 draw_pass_1 = SubResource("SphereMesh_treat_crumb")
 
+[node name="ReactionEffects" type="Node3D" parent="."]
+
+[node name="SleepZs" type="Node3D" parent="ReactionEffects"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0315156, 0.31433517, -0.02)
+visible = false
+
+[node name="ZLarge" type="Label3D" parent="ReactionEffects/SleepZs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+pixel_size = 0.004
+billboard = 1
+modulate = Color(0.8, 0.93, 1, 0.92)
+text = "Z"
+font_size = 34
+
+[node name="ZMedium" type="Label3D" parent="ReactionEffects/SleepZs"]
+transform = Transform3D(0.82, 0, 0, 0, 0.82, 0, 0, 0, 0.82, 0.12, 0.14, 0.02)
+pixel_size = 0.004
+billboard = 1
+modulate = Color(0.8, 0.93, 1, 0.76)
+text = "z"
+font_size = 28
+
+[node name="ZSmall" type="Label3D" parent="ReactionEffects/SleepZs"]
+transform = Transform3D(0.68, 0, 0, 0, 0.68, 0, 0, 0, 0.68, 0.22, 0.24, 0.03)
+pixel_size = 0.004
+billboard = 1
+modulate = Color(0.8, 0.93, 1, 0.62)
+text = "z"
+font_size = 22
+
 [node name="Armature" type="Node3D" parent="."]
 
 [node name="Skeleton3D" type="Skeleton3D" parent="Armature"]

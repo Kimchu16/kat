@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://do2602wxnbmhy"
 path.s3tc="res://.godot/imported/bowl_of_food_for_cat_0.png-d6db8ac106442991b16d4ac025e67731.s3tc.ctex"
+path.etc2="res://.godot/imported/bowl_of_food_for_cat_0.png-d6db8ac106442991b16d4ac025e67731.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/bowl_of_food_for_cat_0.png"
-dest_files=["res://.godot/imported/bowl_of_food_for_cat_0.png-d6db8ac106442991b16d4ac025e67731.s3tc.ctex"]
+dest_files=["res://.godot/imported/bowl_of_food_for_cat_0.png-d6db8ac106442991b16d4ac025e67731.s3tc.ctex", "res://.godot/imported/bowl_of_food_for_cat_0.png-d6db8ac106442991b16d4ac025e67731.etc2.ctex"]
 
 [params]
 
