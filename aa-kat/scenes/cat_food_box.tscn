@@ -1,0 +1,109 @@
+[gd_scene load_steps=12 format=3 uid="uid://hj6fuqrm6sod"]
+
+[ext_resource type="Script" uid="uid://bk3grj2oo6b7g" path="res://scripts/cat_food_dispenser.gd" id="1_dispenser"]
+[ext_resource type="Script" uid="uid://ckk7jep35yt25" path="res://addons/godot-xr-tools/objects/grab_points/grab_point.gd" id="2_grab_point"]
+[ext_resource type="AudioStream" uid="uid://3in17ggda180" path="res://audio/sfx/pour_kat_food.mp3" id="3_5403e"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dispenser"]
+size = Vector3(0.3, 0.44, 0.16)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bag"]
+albedo_color = Color(0.12549, 0.364706, 0.282353, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="BoxMesh_bag_body"]
+material = SubResource("StandardMaterial3D_bag")
+size = Vector3(0.28, 0.42, 0.14)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_label"]
+albedo_color = Color(0.933333, 0.823529, 0.596078, 1)
+roughness = 0.78
+
+[sub_resource type="BoxMesh" id="BoxMesh_label"]
+material = SubResource("StandardMaterial3D_label")
+size = Vector3(0.19, 0.14, 0.012)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
+albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
+roughness = 0.86
+
+[sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
+material = SubResource("StandardMaterial3D_kibble")
+radius = 0.022
+height = 0.044
+radial_segments = 8
+rings = 4
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kibble"]
+direction = Vector3(0, -1, 0)
+spread = 9.0
+initial_velocity_min = 0.35
+initial_velocity_max = 0.85
+angular_velocity_min = -180.0
+angular_velocity_max = 180.0
+gravity = Vector3(0, -5.2, 0)
+scale_min = 0.85
+scale_max = 1.25
+color = Color(0.462745, 0.235294, 0.0901961, 1)
+
+[node name="FoodBox" type="RigidBody3D" groups=["cat_food_dispenser"]]
+collision_layer = 4
+collision_mask = 196615
+mass = 0.42
+freeze_mode = 1
+script = ExtResource("1_dispenser")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_dispenser")
+
+[node name="GrabPoint" type="Marker3D" parent="."]
+script = ExtResource("2_grab_point")
+
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="BagBody" type="MeshInstance3D" parent="Visuals"]
+mesh = SubResource("BoxMesh_bag_body")
+
+[node name="FrontLabel" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.090517014, 0.07610557)
+mesh = SubResource("BoxMesh_label")
+
+[node name="LabelText" type="Label3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0049084835, 0.085608974, 0.07042358)
+pixel_size = 0.003
+text = "KAT
+FOOD"
+font_size = 24
+
+[node name="KibbleIconA" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -0.045, -0.08, 0.06510557)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibbleIconB" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, -0.092, 0.06510557)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="KibbleIconC" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0.045, -0.08, 0.06510557)
+mesh = SubResource("SphereMesh_kibble_piece")
+surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
+
+[node name="PourOrigin" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.09348719, 0.25124168, 0)
+
+[node name="PourAudio" type="AudioStreamPlayer3D" parent="PourOrigin"]
+stream = ExtResource("3_5403e")
+volume_db = 2.0
+unit_size = 8.0
+max_distance = 25.0
+
+[node name="KibbleParticles" type="GPUParticles3D" parent="PourOrigin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09726855, 0, 0)
+emitting = false
+amount = 72
+lifetime = 0.85
+visibility_aabb = AABB(-0.35, -1.25, -0.35, 0.7, 1.35, 0.7)
+process_material = SubResource("ParticleProcessMaterial_kibble")
+draw_pass_1 = SubResource("SphereMesh_kibble_piece")

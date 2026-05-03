@@ -1,4 +1,4 @@
-[gd_scene load_steps=63 format=4 uid="uid://0dd5tvevrmuw"]
+[gd_scene load_steps=65 format=4 uid="uid://0dd5tvevrmuw"]
 
 [ext_resource type="Texture2D" uid="uid://jvad4qki87o4" path="res://models/pillow_low_poly_0.png" id="2_g7r17"]
 [ext_resource type="Texture2D" uid="uid://dv43hshno5ryv" path="res://models/pillow_low_poly_1.png" id="3_ixvms"]
@@ -6,9 +6,11 @@
 [ext_resource type="Texture2D" uid="uid://do2602wxnbmhy" path="res://models/bowl_of_food_for_cat_0.png" id="5_e5nar"]
 [ext_resource type="PackedScene" uid="uid://du6x4vb23erxs" path="res://scenes/quest_vr_player.tscn" id="6_vr_player"]
 [ext_resource type="PackedScene" uid="uid://b8qlymlaoh6pg" path="res://scenes/Kat.tscn" id="7_8sno8"]
+[ext_resource type="AudioStream" uid="uid://c6gy4pxhfmos3" path="res://audio/sfx/cat-eating.mp3" id="7_e5nar"]
+[ext_resource type="PackedScene" uid="uid://hj6fuqrm6sod" path="res://scenes/cat_food_box.tscn" id="7_trb1s"]
 [ext_resource type="PackedScene" uid="uid://6v6taocj1e5p" path="res://scenes/fish_treat.tscn" id="8_g7r17"]
 [ext_resource type="PackedScene" uid="uid://bcecue32gid04" path="res://scenes/ball.tscn" id="8_kesyf"]
-[ext_resource type="Script" path="res://scripts/food_bowl.gd" id="9_food_bowl"]
+[ext_resource type="Script" uid="uid://b3xrlvyp3fow6" path="res://scripts/food_bowl.gd" id="9_food_bowl"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 2
@@ -674,6 +676,9 @@ shape = SubResource("BoxShape3D_pillow_collision")
 transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09, 3.221286, 0.104331255, 0)
 script = ExtResource("9_food_bowl")
 
+[node name="FillTarget" type="Marker3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.8920201e-08, 0.6616173)
+
 [node name="Food Bowl_Materi��l_030_0" type="MeshInstance3D" parent="Furniture/Food Bowl"]
 mesh = SubResource("ArrayMesh_r47vm")
 skeleton = NodePath("")
@@ -711,6 +716,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33999825, 0.13999999, -0.3
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
+[node name="KatEating" type="AudioStreamPlayer3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(10, 0, 0, 0, 10, 5.684342e-14, 0, -5.684342e-14, 10, 0.038986206, -3.483564e-08, 0.7969465)
+stream = ExtResource("7_e5nar")
+volume_db = 5.0
+
 [node name="Water Bowl" type="Node3D" parent="Furniture"]
 transform = Transform3D(0.1, 0, 0, 0, -4.371139e-09, 0.1, 0, -0.1, -4.371139e-09, 3.221286, 0.104331255, 0.46193564)
 
@@ -723,6 +733,9 @@ transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_water_surface")
 surface_material_override/0 = SubResource("StandardMaterial3D_water_surface")
+
+[node name="FoodBox" parent="Furniture" instance=ExtResource("7_trb1s")]
+transform = Transform3D(0.53934395, 0, 0.8420855, 0, 1, 0, -0.8420855, 0, 0.53934395, -1.6270064, 0.7086394, 0.5286428)
 
 [node name="Kat" parent="." instance=ExtResource("7_8sno8")]
 

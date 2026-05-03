@@ -29,6 +29,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 current = true
 far = 24.0
 
+[node name="AudioListener3D" type="AudioListener3D" parent="XROrigin3D/XRCamera3D"]
+current = true
+
 [node name="VRCommonShaderCache" parent="XROrigin3D/XRCamera3D" instance=ExtResource("2_shader_cache")]
 
 [node name="FadeCollision" parent="XROrigin3D/XRCamera3D" instance=ExtResource("10_fade_collision")]

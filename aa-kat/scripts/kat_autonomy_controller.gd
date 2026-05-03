@@ -7,6 +7,14 @@ extends Node3D
 @export var autonomy_enabled: bool = true
 @export var target_root_path: NodePath = NodePath("../KatTargets")
 @export var food_bowl_path: NodePath = NodePath("../Furniture/Food Bowl")
+@export var eating_audio_path: NodePath = NodePath("../Furniture/Food Bowl/KatEating")
+@export var eating_audio_stream: AudioStream = preload("res://audio/sfx/cat-eating.mp3")
+@export var eating_audio_volume_db: float = 5.0
+@export var user_follow_target_path: NodePath = NodePath("../QuestVRPlayer/XROrigin3D")
+@export var complaint_audio_stream: AudioStream = preload("res://audio/sfx/cat-complaint.mp3")
+@export var complaint_audio_volume_db: float = 4.0
+@export var hungry_beg_threshold: float = 0.62
+@export var begging_follow_resume_distance: float = 0.85
 
 # Movement values are kept here so they can still be tweaked from the Kat scene.
 @export var move_speed: float = 0.85
@@ -68,6 +76,8 @@ var _target_selector: Variant = KAT_TARGET_SELECTOR_SCRIPT.new()
 var _navigator: Variant = KAT_NAVIGATOR_SCRIPT.new()
 var _animation_driver: Variant = KAT_ANIMATION_DRIVER_SCRIPT.new()
 var _animation_player: AnimationPlayer
+var _eating_audio_player: AudioStreamPlayer3D
+var _complaint_audio_player: AudioStreamPlayer3D
 var _pounce_hitbox: Area3D
 var _debug_label: Label3D
 var _state_fatigue: Dictionary = {}
@@ -75,6 +85,7 @@ var _state_history: Array[StringName] = []
 var _decision_timer: float = 0.0
 var _pounce_impulse_sent: bool = false
 var _eat_bowl_emptied: bool = false
+var _is_begging_for_food: bool = false
 var _play_reengage_timer: float = 0.0
 var _has_reached_target: bool = true
 var _is_exiting_state: bool = false
@@ -91,6 +102,8 @@ func _ready() -> void:
 	_pounce_hitbox = get_node_or_null("PounceHitbox") as Area3D
 	if _pounce_hitbox != null:
 		_pounce_hitbox.body_entered.connect(_on_pounce_hitbox_body_entered)
+	_setup_eating_audio()
+	_setup_complaint_audio()
 	_setup_helpers()
 	_target_selector.setup_roam_target()
 	_target_selector.collect_targets()
@@ -101,12 +114,16 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not autonomy_enabled:
+		_stop_eating_audio()
+		_stop_complaint_audio()
 		return
 
 	_sync_helper_config()
 	_decay_state_fatigue(delta)
 	needs.tick(delta, current_state == &"play")
 	if _is_exiting_state:
+		return
+	if _update_food_begging(delta):
 		return
 
 	# First Kat travels to the chosen target. Once it arrives, the state effect
@@ -122,7 +139,10 @@ func _process(delta: float) -> void:
 		if arrived:
 			_has_reached_target = true
 			_decision_timer = _decision_window_for_state(current_state)
-			_play_state_animation()
+			if _is_begging_for_food:
+				_animation_driver.play_idle_animation()
+			else:
+				_play_state_animation()
 			_apply_arrival_effects(delta)
 		else:
 			_play_locomotion_animation()
@@ -188,6 +208,13 @@ func _choose_next_state() -> void:
 	_target_node = _target_selector.get_target_for_action(current_state, true)
 	_pounce_impulse_sent = false
 	_eat_bowl_emptied = false
+	_is_begging_for_food = current_state == &"eat" and _should_beg_for_food()
+	if _is_begging_for_food:
+		_target_node = _resolve_user_follow_target()
+		_start_complaint_audio()
+		_stop_eating_audio()
+	else:
+		_stop_complaint_audio()
 	_play_reengage_timer = 0.0
 	_is_exiting_state = false
 	_has_reached_target = _target_node == null
@@ -200,15 +227,22 @@ func _choose_next_state() -> void:
 	_record_state_choice(current_state)
 	_decision_timer = _decision_window_for_state(current_state)
 	if _has_reached_target:
-		_play_state_animation()
+		if _is_begging_for_food:
+			_animation_driver.play_idle_animation()
+		else:
+			_play_state_animation()
 	else:
 		_play_locomotion_animation()
 	_update_debug_label(needs.snapshot())
 
 
 func _score_actions() -> Dictionary:
+	var eat_score: float = needs.hunger * 1.45
+	if _should_beg_for_food():
+		eat_score += 0.75
+
 	return {
-		&"eat": needs.hunger * 1.45,
+		&"eat": eat_score,
 		&"rest": (1.0 - needs.energy) * 1.25 + needs.stress * 0.35,
 		&"play": (1.0 - needs.play) * 0.95 + needs.curiosity * 0.25,
 		&"explore": needs.curiosity * 0.85 + (1.0 - needs.stress) * 0.12,
@@ -220,7 +254,7 @@ func _action_is_available(action: StringName) -> bool:
 	if not _target_selector.action_is_available(action):
 		return false
 	if action == &"eat":
-		return _food_bowl_has_food()
+		return _food_bowl_has_food() or _should_beg_for_food()
 	return true
 
 
@@ -321,9 +355,12 @@ func _decision_window_for_state(action: StringName) -> float:
 func _apply_arrival_effects(delta: float) -> void:
 	match current_state:
 		&"eat":
-			if not _eat_bowl_emptied:
-				_empty_food_bowl()
-				_eat_bowl_emptied = true
+			if _is_begging_for_food or not _food_bowl_has_food():
+				if _should_beg_for_food():
+					_begin_food_begging()
+				return
+			_stop_complaint_audio()
+			_start_eating_audio()
 			needs.nibble(delta)
 		&"rest":
 			needs.rest(delta)
@@ -384,12 +421,136 @@ func _food_bowl_has_food() -> bool:
 	return true
 
 
+func _should_beg_for_food() -> bool:
+	return not _food_bowl_has_food() and needs.hunger >= hungry_beg_threshold
+
+
+func _begin_food_begging() -> void:
+	_is_begging_for_food = true
+	_stop_eating_audio()
+	_start_complaint_audio()
+	_decision_timer = maxf(_decision_timer, min_decision_time)
+
+	var user_target: Node3D = _resolve_user_follow_target()
+	if user_target == null:
+		_target_node = null
+		_has_reached_target = true
+		_navigator.clear()
+		_animation_driver.play_idle_animation()
+		return
+
+	if _target_node != user_target:
+		_target_node = user_target
+		_has_reached_target = false
+		_navigator.begin_target_movement(_target_node)
+		_play_locomotion_animation()
+
+
+func _update_food_begging(_delta: float) -> bool:
+	if current_state != &"eat":
+		return false
+
+	if _food_bowl_has_food():
+		if _is_begging_for_food:
+			_resume_eating_after_refill()
+			return true
+		return false
+
+	if not _should_beg_for_food():
+		return false
+
+	if not _is_begging_for_food:
+		_begin_food_begging()
+
+	_decision_timer = maxf(_decision_timer, min_decision_time)
+	_stop_eating_audio()
+	_start_complaint_audio()
+
+	if _target_node == null or not is_instance_valid(_target_node):
+		_target_node = _resolve_user_follow_target()
+		if _target_node != null:
+			_has_reached_target = false
+			_navigator.begin_target_movement(_target_node)
+
+	if _target_node == null:
+		_animation_driver.play_idle_animation()
+		return true
+
+	if _has_reached_target and _horizontal_distance_to_node(_target_node) > begging_follow_resume_distance:
+		_has_reached_target = false
+		_navigator.begin_target_movement(_target_node)
+		_play_locomotion_animation()
+		return true
+
+	if _has_reached_target:
+		_animation_driver.play_idle_animation()
+
+	return false
+
+
+func _resume_eating_after_refill() -> void:
+	_is_begging_for_food = false
+	_stop_complaint_audio()
+	_target_node = _target_selector.get_target_for_action(&"eat", false)
+	_decision_timer = _decision_window_for_state(&"eat")
+
+	if _target_node == null:
+		_has_reached_target = true
+		_navigator.clear()
+		_play_state_animation()
+		return
+
+	_has_reached_target = false
+	_navigator.begin_target_movement(_target_node)
+	_play_locomotion_animation()
+
+
+func _resolve_user_follow_target() -> Node3D:
+	var user_target: Node3D = get_node_or_null(user_follow_target_path) as Node3D
+	if user_target != null:
+		return user_target
+
+	user_target = get_node_or_null("../QuestVRPlayer/XROrigin3D") as Node3D
+	if user_target != null:
+		return user_target
+
+	return get_node_or_null("../QuestVRPlayer") as Node3D
+
+
+func _horizontal_distance_to_node(node: Node3D) -> float:
+	if node == null:
+		return 0.0
+
+	return Vector2(
+		node.global_position.x - global_position.x,
+		node.global_position.z - global_position.z
+	).length()
+
+
 func _empty_food_bowl() -> void:
 	if _food_bowl != null and _food_bowl.has_method(&"empty_bowl"):
 		_food_bowl.call(&"empty_bowl")
 
 
+func _finish_eating_state() -> void:
+	if current_state != &"eat":
+		return
+
+	_stop_eating_audio()
+	if _is_begging_for_food:
+		_stop_complaint_audio()
+		_is_begging_for_food = false
+		return
+
+	if not _eat_bowl_emptied:
+		_empty_food_bowl()
+		_eat_bowl_emptied = true
+
+
 func catch_attention(source: Node3D = null) -> void:
+	_stop_eating_audio()
+	_stop_complaint_audio()
+	_is_begging_for_food = false
 	current_state = &"attention"
 	_target_node = null
 	_has_reached_target = true
@@ -482,6 +643,7 @@ func _play_locomotion_animation() -> void:
 
 
 func _finish_current_state() -> void:
+	_finish_eating_state()
 	if _animation_driver.play_action_phase_animation(current_state, PHASE_EXIT, 0.12):
 		_is_exiting_state = true
 		_target_node = null
@@ -491,6 +653,81 @@ func _finish_current_state() -> void:
 		return
 
 	_choose_next_state()
+
+
+func _setup_eating_audio() -> void:
+	_eating_audio_player = get_node_or_null(eating_audio_path) as AudioStreamPlayer3D
+	if _eating_audio_player == null and _food_bowl != null:
+		_eating_audio_player = _food_bowl.get_node_or_null("KatEating") as AudioStreamPlayer3D
+
+	if _eating_audio_player == null:
+		if eating_audio_stream == null:
+			return
+		_eating_audio_player = AudioStreamPlayer3D.new()
+		_eating_audio_player.name = "EatingAudio"
+		add_child(_eating_audio_player)
+
+	if _eating_audio_player.stream == null:
+		if eating_audio_stream == null:
+			return
+		_eating_audio_player.stream = eating_audio_stream.duplicate() as AudioStream
+	else:
+		_eating_audio_player.stream = _eating_audio_player.stream.duplicate() as AudioStream
+	_eating_audio_player.volume_db = eating_audio_volume_db
+	_eating_audio_player.max_distance = 25.0
+	_eating_audio_player.unit_size = 8.0
+	_eating_audio_player.bus = &"Master"
+	_make_audio_stream_loop(_eating_audio_player)
+
+
+func _setup_complaint_audio() -> void:
+	if complaint_audio_stream == null:
+		return
+
+	_complaint_audio_player = get_node_or_null("ComplaintAudio") as AudioStreamPlayer3D
+	if _complaint_audio_player == null:
+		_complaint_audio_player = AudioStreamPlayer3D.new()
+		_complaint_audio_player.name = "ComplaintAudio"
+		add_child(_complaint_audio_player)
+
+	_complaint_audio_player.stream = complaint_audio_stream.duplicate() as AudioStream
+	_complaint_audio_player.volume_db = complaint_audio_volume_db
+	_complaint_audio_player.max_distance = 20.0
+	_complaint_audio_player.unit_size = 6.0
+	_complaint_audio_player.bus = &"Master"
+	_make_audio_stream_loop(_complaint_audio_player)
+
+
+func _start_eating_audio() -> void:
+	if _eating_audio_player != null and not _eating_audio_player.playing:
+		_eating_audio_player.stream_paused = false
+		_eating_audio_player.play()
+
+
+func _stop_eating_audio() -> void:
+	if _eating_audio_player != null and _eating_audio_player.playing:
+		_eating_audio_player.stop()
+
+
+func _start_complaint_audio() -> void:
+	if _complaint_audio_player != null and not _complaint_audio_player.playing:
+		_complaint_audio_player.stream_paused = false
+		_complaint_audio_player.play()
+
+
+func _stop_complaint_audio() -> void:
+	if _complaint_audio_player != null and _complaint_audio_player.playing:
+		_complaint_audio_player.stop()
+
+
+func _make_audio_stream_loop(player: AudioStreamPlayer3D) -> void:
+	if player == null or player.stream == null:
+		return
+
+	if player.stream is AudioStreamWAV:
+		(player.stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+	if player.stream is AudioStreamMP3:
+		(player.stream as AudioStreamMP3).loop = true
 
 
 func _on_animation_finished(animation_name: StringName) -> void:

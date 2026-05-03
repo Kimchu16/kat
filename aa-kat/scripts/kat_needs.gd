@@ -22,15 +22,15 @@ var last_interaction_age: float = 0.0
 func tick(delta: float, is_playing: bool = false) -> void:
 	# These rates are deliberately small so the cat changes mood over minutes,
 	# not every few seconds.
-	hunger = _bounded(hunger + 0.030 * delta)
-	energy = _bounded(energy - (0.012 + stress * 0.010) * delta)
+	hunger = _bounded(hunger + 0.018 * delta)
+	energy = _bounded(energy - (0.007 + stress * 0.006) * delta)
 	# Do not drain play during the play state, otherwise the reward from chasing
 	# the ball gets cancelled out and Kat keeps choosing play again.
 	if not is_playing:
-		play = _bounded(play - 0.020 * delta)
-	affection = _bounded(affection - 0.008 * delta)
-	curiosity = _bounded(curiosity + 0.010 * delta)
-	stress = _bounded(stress - 0.020 * delta)
+		play = _bounded(play - 0.010 * delta)
+	affection = _bounded(affection - 0.004 * delta)
+	curiosity = _bounded(curiosity + 0.006 * delta)
+	stress = _bounded(stress - 0.012 * delta)
 	last_interaction_age += delta
 	changed.emit(snapshot())
 
@@ -73,7 +73,7 @@ func startle(amount: float = 0.28) -> void:
 
 func rest(delta: float) -> void:
 	energy = _bounded(energy + 0.130 * delta)
-	play = _bounded(play - 0.006 * delta)
+	play = _bounded(play - 0.003 * delta)
 	stress = _bounded(stress - 0.050 * delta)
 	changed.emit(snapshot())
 
@@ -86,8 +86,8 @@ func nibble(delta: float) -> void:
 
 func chase(delta: float) -> void:
 	play = _bounded(play + 0.060 * delta)
-	energy = _bounded(energy - 0.045 * delta)
-	curiosity = _bounded(curiosity - 0.035 * delta)
+	energy = _bounded(energy - 0.025 * delta)
+	curiosity = _bounded(curiosity - 0.018 * delta)
 	changed.emit(snapshot())
 
 
