@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://b8qlymlaoh6pg" path="res://scenes/Kat.tscn" id="7_8sno8"]
 [ext_resource type="PackedScene" uid="uid://6v6taocj1e5p" path="res://scenes/fish_treat.tscn" id="8_g7r17"]
 [ext_resource type="PackedScene" uid="uid://bcecue32gid04" path="res://scenes/ball.tscn" id="8_kesyf"]
-[ext_resource type="Script" uid="uid://b3xrlvyp3fow6" path="res://scripts/food_bowl.gd" id="9_food_bowl"]
+[ext_resource type="Script" path="res://scripts/food_bowl.gd" id="9_food_bowl"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 2
@@ -166,33 +166,6 @@ emission_enabled = true
 emission = Color(1, 0.741176, 0.431373, 1)
 emission_energy_multiplier = 1.6
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_water_surface"]
-transparency = 1
-albedo_color = Color(0.176471, 0.533333, 0.811765, 0.62)
-roughness = 0.12
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_water_surface"]
-top_radius = 0.72
-bottom_radius = 0.72
-height = 0.025
-radial_segments = 40
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
-albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
-roughness = 0.86
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_food_mound"]
-top_radius = 0.56
-bottom_radius = 0.66
-height = 0.13
-radial_segments = 28
-
-[sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
-radius = 0.12
-height = 0.24
-radial_segments = 12
-rings = 6
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ir7hh"]
 resource_name = "Scene_-_Root"
 cull_mode = 2
@@ -281,6 +254,33 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_4nopm")
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_food_mound"]
+top_radius = 0.56
+bottom_radius = 0.66
+height = 0.13
+radial_segments = 28
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kibble"]
+albedo_color = Color(0.462745, 0.235294, 0.0901961, 1)
+roughness = 0.86
+
+[sub_resource type="SphereMesh" id="SphereMesh_kibble_piece"]
+radius = 0.12
+height = 0.24
+radial_segments = 12
+rings = 6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_water_surface"]
+top_radius = 0.72
+bottom_radius = 0.72
+height = 0.025
+radial_segments = 40
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_water_surface"]
+transparency = 1
+albedo_color = Color(0.176471, 0.533333, 0.811765, 0.62)
+roughness = 0.12
 
 [node name="KatRoom" type="Node3D"]
 
@@ -679,6 +679,7 @@ mesh = SubResource("ArrayMesh_r47vm")
 skeleton = NodePath("")
 
 [node name="FoodFull" type="Node3D" parent="Furniture/Food Bowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.8920201e-08, 0.6616173)
 
 [node name="KibbleMound" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.47)
@@ -686,27 +687,27 @@ mesh = SubResource("CylinderMesh_food_mound")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
 [node name="KibblePieceA" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.28, -0.2, -0.58)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2800007, -0.20000002, -0.22865653)
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
 [node name="KibblePieceB" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, -0.24, -0.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22000122, -0.24000001, -0.30849695)
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
 [node name="KibblePieceC" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.18, -0.62)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.060001373, 0.18, -0.25071895)
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
 [node name="KibblePieceD" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.31, 0.12, -0.56)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.30999756, 0.11999999, -0.35884094)
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
 [node name="KibblePieceE" type="MeshInstance3D" parent="Furniture/Food Bowl/FoodFull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0.14, -0.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33999825, 0.13999999, -0.326025)
 mesh = SubResource("SphereMesh_kibble_piece")
 surface_material_override/0 = SubResource("StandardMaterial3D_kibble")
 
@@ -718,7 +719,7 @@ mesh = SubResource("ArrayMesh_r47vm")
 skeleton = NodePath("")
 
 [node name="WaterSurface" type="MeshInstance3D" parent="Furniture/Water Bowl"]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.48)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0.20923197)
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_water_surface")
 surface_material_override/0 = SubResource("StandardMaterial3D_water_surface")
