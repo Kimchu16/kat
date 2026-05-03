@@ -20,6 +20,8 @@ extends Node3D
 @export var treat_notice_area_path: NodePath = NodePath("TreatNoticeArea")
 @export var treat_feed_area_path: NodePath = NodePath("TreatFeedArea")
 @export var treat_eating_particles_path: NodePath = NodePath("TreatEatingParticles")
+@export var sleep_zs_path: NodePath = NodePath("ReactionEffects/SleepZs")
+@export var bowl_eating_particles_path: NodePath = NodePath("../Furniture/Food Bowl/EatingCrumbs")
 @export var treat_meow_stream: AudioStream = preload("res://audio/sfx/cat-meow-short.mp3")
 @export var purr_audio_stream: AudioStream = preload("res://audio/sfx/cats-purring2.mp3")
 @export var hiss_audio_stream: AudioStream = preload("res://audio/sfx/cat_hiss.mp3")
@@ -106,6 +108,7 @@ const KAT_STATE_PICKER_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat
 const KAT_TREAT_SENSOR_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_treat_sensor.gd")
 const KAT_DEBUG_DISPLAY_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_debug_display.gd")
 const KAT_POSITION_HELPER_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_position_helper.gd")
+const KAT_REACTION_EFFECTS_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_reaction_effects.gd")
 const KAT_FOOD_BEHAVIOUR_SCRIPT: GDScript = preload("res://scripts/kat/behaviours/kat_food_behaviour.gd")
 const KAT_PLAY_BEHAVIOUR_SCRIPT: GDScript = preload("res://scripts/kat/behaviours/kat_play_behaviour.gd")
 const KAT_RELATIONSHIP_BEHAVIOUR_SCRIPT: GDScript = preload("res://scripts/kat/behaviours/kat_relationship_behaviour.gd")
@@ -128,6 +131,7 @@ var _state_picker: Variant = KAT_STATE_PICKER_SCRIPT.new()
 var _treat_sensor: Variant = KAT_TREAT_SENSOR_SCRIPT.new()
 var _debug_display: Variant = KAT_DEBUG_DISPLAY_SCRIPT.new()
 var _position_helper: Variant = KAT_POSITION_HELPER_SCRIPT.new()
+var _reaction_effects: Variant = KAT_REACTION_EFFECTS_SCRIPT.new()
 var _food_behavior: Variant = KAT_FOOD_BEHAVIOUR_SCRIPT.new()
 var _play_behavior: Variant = KAT_PLAY_BEHAVIOUR_SCRIPT.new()
 var _relationship_behavior: Variant = KAT_RELATIONSHIP_BEHAVIOUR_SCRIPT.new()
@@ -167,9 +171,11 @@ func _process(delta: float) -> void:
 	if not autonomy_enabled:
 		_audio.stop_all()
 		_set_treat_eating_particles(false)
+		_reaction_effects.stop_all()
 		return
 
 	_sync_helper_config()
+	_reaction_effects.update(delta)
 	_state_picker.decay_fatigue(delta)
 	needs.tick(delta, current_state == &"play")
 	_update_purr_audio()
@@ -246,6 +252,7 @@ func _setup_role_modules() -> void:
 		hiss_audio_volume_db
 	)
 	_treat_sensor.setup(self, treat_notice_area_path, treat_feed_area_path, treat_eating_particles_path)
+	_reaction_effects.setup(self, sleep_zs_path, bowl_eating_particles_path)
 	_treat_behavior.setup(self, _treat_sensor)
 	_treat_behavior.avoidance_requested.connect(_on_treat_avoidance_requested)
 	_sync_helper_config()
@@ -316,6 +323,7 @@ func _choose_next_state() -> void:
 	current_state = selected_state
 	_target_node = _target_for_state(current_state)
 	_play_behavior.reset()
+	_reaction_effects.stop_state_loops()
 	_eat_bowl_emptied = false
 	_is_begging_for_food = current_state == &"eat" and bool(_food_behavior.should_beg())
 	_relationship_behavior.reset()
@@ -382,13 +390,16 @@ func _apply_arrival_effects(delta: float) -> void:
 	match current_state:
 		&"eat":
 			if _is_begging_for_food or not bool(_food_behavior.has_food()):
+				_reaction_effects.set_bowl_eating_particles(false)
 				if bool(_food_behavior.should_beg()):
 					_food_behavior.begin_begging()
 				return
 			_stop_complaint_audio()
 			_start_eating_audio()
+			_reaction_effects.set_bowl_eating_particles(true)
 			needs.nibble(delta)
 		&"rest":
+			_reaction_effects.set_sleep_zs(true)
 			needs.rest(delta)
 		&"play":
 			_play_behavior.apply_arrival_effects(delta)
@@ -442,6 +453,7 @@ func _horizontal_distance_to_node(node: Node3D) -> float:
 
 
 func _finish_eating_state() -> void:
+	_reaction_effects.set_bowl_eating_particles(false)
 	_food_behavior.finish_eating_state()
 
 
@@ -454,6 +466,7 @@ func catch_attention(source: Node3D = null) -> void:
 	_stop_complaint_audio()
 	_stop_treat_meow_audio()
 	_treat_behavior.stop_particles()
+	_reaction_effects.stop_all()
 	_food_behavior.clear_begging()
 	_treat_behavior.clear(false)
 	current_state = &"attention"
@@ -502,6 +515,7 @@ func _play_locomotion_animation() -> void:
 
 
 func _finish_current_state() -> void:
+	_reaction_effects.stop_state_loops()
 	_finish_eating_state()
 	if _animation_driver.play_action_phase_animation(current_state, PHASE_EXIT, 0.12):
 		_is_exiting_state = true
@@ -520,6 +534,7 @@ func _start_eating_audio() -> void:
 
 func _stop_eating_audio() -> void:
 	_audio.stop_eating()
+	_reaction_effects.set_bowl_eating_particles(false)
 
 
 func _start_complaint_audio() -> void:

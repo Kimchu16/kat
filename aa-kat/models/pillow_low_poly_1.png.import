@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dv43hshno5ryv"
 path.s3tc="res://.godot/imported/pillow_low_poly_1.png-ec1de8fb15c7f709cba7df14feeaee1c.s3tc.ctex"
+path.etc2="res://.godot/imported/pillow_low_poly_1.png-ec1de8fb15c7f709cba7df14feeaee1c.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/pillow_low_poly_1.png"
-dest_files=["res://.godot/imported/pillow_low_poly_1.png-ec1de8fb15c7f709cba7df14feeaee1c.s3tc.ctex"]
+dest_files=["res://.godot/imported/pillow_low_poly_1.png-ec1de8fb15c7f709cba7df14feeaee1c.s3tc.ctex", "res://.godot/imported/pillow_low_poly_1.png-ec1de8fb15c7f709cba7df14feeaee1c.etc2.ctex"]
 
 [params]
 
