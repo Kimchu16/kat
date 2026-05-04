@@ -9,15 +9,19 @@ Class Group: TU858
 Github: https://github.com/Kimchu16/kat
 
 # Video
-TODO: Add public YouTube video link once the Quest 3 build has been recorded.
+[![Kat Quest 3 demo](https://img.youtube.com/vi/0lZL8-7FsOQ/maxresdefault.jpg)](https://youtu.be/0lZL8-7FsOQ)
 
 # Screenshots
-TODO: Add screenshots of Kat in the room, the food/treat interactions, and the Quest 3 view.
+![Kat standing on the pillow bed](docs/screenshots/kat-pillow-bed.png)
+![Kat in the room with the food box](docs/screenshots/kat-room-view.png)
+![Kat playing near the ball](docs/screenshots/kat-ball-play.png)
+![Kat noticing a held fish treat](docs/screenshots/kat-treat-attention.png)
+![Kat resting with sleep particles](docs/screenshots/kat-resting-zs.png)
 
 # Description of the project
 Kat is an autonomous VR cat companion designed for the Meta Quest 3. The project focuses on making a small artificial lifeform feel believable through independent movement, needs, moods, animation, sound, and player interaction. Kat lives in a cosy room scene and chooses what to do based on hunger, energy, play, affection, anger, curiosity, trust, and stress.
 
-The player can move around the room in VR, crouch, pick up items, feed Kat, refill the food bowl, offer fish treats, and watch Kat respond. Kat can roam around the floor, jump onto furniture such as the couch, cat tree, and pillow bed, play with the ball, sleep, eat, beg when hungry, purr when affectionate, hiss or avoid the player when angry, and react to treats being teased or offered.
+The player can move around the room in VR, crouch, pick up items, feed Kat, refill the food bowl, offer fish treats, and watch Kat respond. Kat can roam around the floor, jump onto furniture such as the couch, cat tree, and pillow bed, steer around furniture, play with the ball, sleep, eat, beg when hungry, purr when affectionate, hiss or avoid the player when angry, and react to treats being teased or offered.
 
 The main goal is to show an autonomous lifeform with a mind of its own rather than a scripted pet. Kat does not simply wait for input; it makes choices from changing internal needs and reacts differently depending on how the player treats it.
 
@@ -32,20 +36,25 @@ The main goal is to show an autonomous lifeform with a mind of its own rather th
 8. To tease Kat, let her notice the held treat, then move away out of her treat detection zone before feeding her. Repeating this makes her more annoyed and less affectionate.
 9. If the food bowl is empty, pick up the cat food box and tilt it over the bowl until kibble pours out and refills it.
 10. Watch Kat's mood, movement, audio, and particles change while she eats, plays, sleeps, follows, begs, purrs, or avoids the player.
+11. For testing navigation in VR, press the B button on the right controller to toggle Kat's in-game debug movement lines.
 
 # How it works:
 - `KatAutonomyController` is the high-level brain that chooses Kat's current state and coordinates the helper scripts.
 - `KatNeeds` stores the internal needs that drive Kat's behaviour, including hunger, energy, play, affection, anger, curiosity, trust, and stress.
 - A finite state style controller switches between behaviours such as eating, resting, exploring, playing, social following, avoiding, and treat attention.
 - Target selection and navigation are separated into helpers so Kat can move to floor targets, moving targets, and elevated targets.
+- Kat uses a `CharacterBody3D` controller for normal floor movement, which lets her slide around room collisions instead of passing straight through furniture.
 - Kat uses running and jumping movement to reach the ball, couch, cat tree, pillow bed, food bowl, and other target markers.
+- Target selection includes collision checks so random roam and explore targets are less likely to be chosen inside furniture.
 - Ball play uses repeated pounce-and-chase logic so Kat can push the ball, follow it, and pounce again until the state changes.
+- Ball chasing samples reachable approach points around the moving ball and creates temporary detour waypoints when the coffee table, couch, or other furniture blocks the direct path.
 - The food bowl tracks whether food is visible or empty. Kat only empties the bowl after finishing eating.
 - The cat food box is pickable and pours kibble particles when tilted. If it is held over an empty bowl for long enough, the bowl refills.
 - The fish treat spawner keeps one treat available at a time. After Kat eats a treat, a new one appears on the table.
 - Treat detection areas let Kat notice a held treat, wait near the player, eat from a small mouth-area trigger, or become annoyed if the player repeatedly gets her attention with a treat and then runs out of the detection zone.
 - Audio is spatial, using meows, purring, hissing, eating sounds, pouring sounds, and background music to make Kat feel more alive.
 - Particle and visual effects include kibble pour particles, bowl eating crumbs, treat crumbs, and sleeping Zs.
+- Runtime navigation debug gizmos can show Kat's target direction, movement direction, obstacle rays, hit points, avoidance direction, and detour waypoint while testing in-game.
 - The scene uses Godot XR Tools and OpenXR Vendors rather than custom XR interaction code.
 
 # List of classes/assets in the project
@@ -62,6 +71,7 @@ The main goal is to show an autonomous lifeform with a mind of its own rather th
 | `kat_treat_sensor.gd` | Self written |
 | `kat_reaction_effects.gd` | Self written |
 | `kat_debug_display.gd` | Self written |
+| `kat_navigation_debug_gizmos.gd` | Self written |
 | `kat_position_helper.gd` | Self written |
 | `kat_food_behaviour.gd` | Self written |
 | `kat_play_behaviour.gd` | Self written |
@@ -99,6 +109,9 @@ The main goal is to show an autonomous lifeform with a mind of its own rather th
 * [Godot Vector Math](https://docs.godotengine.org/en/stable/tutorials/math/vector_math.html). Used for direction vectors, distance checks, facing direction, movement interpolation, and horizontal movement calculations.
 * [Godot Ray-casting](https://docs.godotengine.org/en/stable/tutorials/physics/ray-casting.html). Used as a reference for physics queries and obstacle/wall avoidance logic.
 * [Godot RandomNumberGenerator](https://docs.godotengine.org/en/stable/classes/class_randomnumbergenerator.html). Used for randomised state choice, roam targets, and less predictable behaviour timing.
+* [Godot CharacterBody3D](https://docs.godotengine.org/en/stable/classes/class_characterbody3d.html). Used for Kat's collision-aware floor movement.
+* [Godot PhysicsDirectSpaceState3D](https://docs.godotengine.org/en/stable/classes/class_physicsdirectspacestate3d.html). Used for ray and shape queries when checking whether movement paths or roam targets are blocked.
+* [Godot ImmediateMesh](https://docs.godotengine.org/en/stable/classes/class_immediatemesh.html). Used for drawing simple in-game navigation debug lines during testing.
 
 ## Godot and XR references
 * https://godotvr.github.io/godot-xr-tools/
@@ -110,6 +123,8 @@ The main goal is to show an autonomous lifeform with a mind of its own rather th
 * https://docs.godotengine.org/en/stable/classes/class_xrcontroller3d.html
 * https://docs.godotengine.org/en/stable/classes/class_animationplayer.html
 * https://docs.godotengine.org/en/stable/classes/class_gpuparticles3d.html
+* https://docs.godotengine.org/en/stable/classes/class_characterbody3d.html
+* https://docs.godotengine.org/en/stable/classes/class_immediatemesh.html
 * https://docs.godotengine.org/en/stable/tutorials/physics/ray-casting.html
 
 # What I am most proud of in the assignment
@@ -121,6 +136,8 @@ I am also proud of how the different systems connect together to support that be
 Through this project, I learned how important it is to separate systems once a behaviour controller becomes too large. Kat started as one large autonomy script, but it became easier to work with after splitting navigation, target selection, animation, audio, food, play, relationship, treat sensing, and reaction effects into smaller scripts.
 
 I also learned more about designing autonomous agents around small, believable changes rather than one large scripted sequence. Randomness, state fatigue, moving targets, obstacle avoidance, affection, anger, hunger, and energy all had to be balanced so Kat did not feel too predictable or too chaotic. A lot of the work was not just writing the main AI logic, but making sure the room, objects, sounds, animations, collisions, and feedback all supported the illusion that Kat is alive.
+
+Navigation was one of the biggest learning points. I learned that making an autonomous character move through a room is not just about sending it to a target position. Kat needed collision-aware movement, ray and shape checks, safer roam target selection, moving target prediction, detour points around furniture, and in-game debug lines so I could understand why she was getting stuck or choosing certain paths.
 
 # Proposal submitted earlier:
 
@@ -136,7 +153,7 @@ This project addresses the autonomous lifeform brief by focusing on a creature w
 - **VR Interaction**: The player can pick up the food box and fish treat using XR Tools pickable objects.
 - **Food System**: Kat eats from the bowl, empties it after eating, begs when hungry, and resumes eating when the player refills it.
 - **Treat System**: Kat notices held treats, waits near the player, eats from a mouth detection area, and reacts negatively if teased by repeatedly showing the treat and then moving out of the detection zone.
-- **Environmental Navigation**: Kat can roam, avoid obstacles, play with the ball, and jump to elevated areas such as the couch, cat tree, and pillow bed.
+- **Environmental Navigation**: Kat can roam, avoid obstacles, use detour waypoints while chasing the ball, and jump to elevated areas such as the couch, cat tree, and pillow bed.
 - **Polished Feedback**: Animations, spatial audio, purring, hissing, meowing, background music, food particles, treat particles, and sleeping Zs communicate Kat's current mood.
 
 ### XR Tech
