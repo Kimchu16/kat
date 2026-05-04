@@ -1,5 +1,5 @@
 class_name KatAutonomyController
-extends Node3D
+extends CharacterBody3D
 
 # Main "brain" for Kat. This script keeps the high-level state flow, while
 # audio, ball steering, sensing, target picking, navigation and UI live in
@@ -62,7 +62,7 @@ extends Node3D
 @export var jump_arc_height: float = 0.65
 @export var elevated_target_min_height: float = 0.18
 @export var floor_height: float = 0.0
-@export_range(0.0, 1.0, 0.05) var elevated_explore_chance: float = 0.35
+@export_range(0.0, 1.0, 0.05) var elevated_explore_chance: float = 0.65
 
 # Ball-play settings. The re-engage timer stops Kat from instantly spamming
 # impulses before the ball has had a chance to move.
@@ -77,14 +77,18 @@ extends Node3D
 @export var ball_obstacle_avoidance_distance: float = 0.9
 @export_range(0.0, 1.0, 0.05) var ball_obstacle_avoidance_bias: float = 0.8
 @export var ball_obstacle_avoidance_mask: int = 1
-@export var wall_avoidance_distance: float = 0.95
-@export var wall_avoidance_strength: float = 0.75
+@export var wall_avoidance_distance: float = 1.15
+@export var wall_avoidance_strength: float = 1.05
 @export var explore_wander_radius: float = 0.45
 @export var explore_wander_jitter: float = 1.75
 @export var room_roam_min: Vector2 = Vector2(-3.2, -2.95)
 @export var room_roam_max: Vector2 = Vector2(3.25, 2.9)
+@export var play_ball_approach_distance: float = 0.52
+@export var play_ball_near_obstacle_distance: float = 0.68
 @export var roam_pick_min_distance: float = 1.35
-@export var roam_procedural_chance: float = 0.75
+@export var roam_obstacle_check_radius: float = 0.32
+@export var roam_obstacle_collision_mask: int = 1
+@export var roam_procedural_chance: float = 0.55
 
 # These make the state choice less robotic without completely ignoring needs.
 @export_range(0.0, 1.0, 0.01) var state_selection_noise: float = 0.35
@@ -95,6 +99,9 @@ extends Node3D
 @export var min_decision_time: float = 4.0
 @export var max_decision_time: float = 8.5
 @export var show_debug_label: bool = true
+@export var show_navigation_debug_gizmos: bool = false
+@export var navigation_debug_toggle_button: String = "by_button"
+@export var navigation_debug_controller_path: NodePath = NodePath("../QuestVRPlayer/XROrigin3D/RightHandController")
 @export_range(-180.0, 180.0, 1.0) var model_forward_yaw_offset_degrees: float = 90.0
 
 # I preload these instead of using the class names directly because Godot can
@@ -107,6 +114,7 @@ const KAT_BALL_PLAY_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_ba
 const KAT_STATE_PICKER_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_state_picker.gd")
 const KAT_TREAT_SENSOR_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_treat_sensor.gd")
 const KAT_DEBUG_DISPLAY_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_debug_display.gd")
+const KAT_NAVIGATION_DEBUG_GIZMOS_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_navigation_debug_gizmos.gd")
 const KAT_POSITION_HELPER_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_position_helper.gd")
 const KAT_REACTION_EFFECTS_SCRIPT: GDScript = preload("res://scripts/kat/helpers/kat_reaction_effects.gd")
 const KAT_FOOD_BEHAVIOUR_SCRIPT: GDScript = preload("res://scripts/kat/behaviours/kat_food_behaviour.gd")
@@ -130,6 +138,7 @@ var _ball_play: Variant = KAT_BALL_PLAY_SCRIPT.new()
 var _state_picker: Variant = KAT_STATE_PICKER_SCRIPT.new()
 var _treat_sensor: Variant = KAT_TREAT_SENSOR_SCRIPT.new()
 var _debug_display: Variant = KAT_DEBUG_DISPLAY_SCRIPT.new()
+var _navigation_debug_gizmos: Variant = KAT_NAVIGATION_DEBUG_GIZMOS_SCRIPT.new()
 var _position_helper: Variant = KAT_POSITION_HELPER_SCRIPT.new()
 var _reaction_effects: Variant = KAT_REACTION_EFFECTS_SCRIPT.new()
 var _food_behavior: Variant = KAT_FOOD_BEHAVIOUR_SCRIPT.new()
@@ -145,6 +154,9 @@ var _is_begging_for_food: bool = false
 var _play_reengage_timer: float = 0.0
 var _has_reached_target: bool = true
 var _is_exiting_state: bool = false
+var _navigation_debug_enabled: bool = false
+var _navigation_debug_toggle_was_pressed: bool = false
+var _navigation_debug_controller: XRController3D
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -163,11 +175,12 @@ func _ready() -> void:
 	_target_selector.setup_roam_target()
 	_target_selector.collect_targets()
 	_setup_debug_label()
+	_setup_navigation_debug_gizmos()
 	needs.changed.connect(_on_needs_changed)
 	_choose_next_state()
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not autonomy_enabled:
 		_audio.stop_all()
 		_set_treat_eating_particles(false)
@@ -175,6 +188,8 @@ func _process(delta: float) -> void:
 		return
 
 	_sync_helper_config()
+	_update_navigation_debug_toggle()
+	_update_navigation_debug_gizmos()
 	_reaction_effects.update(delta)
 	_state_picker.decay_fatigue(delta)
 	needs.tick(delta, current_state == &"play")
@@ -268,6 +283,8 @@ func _sync_helper_config() -> void:
 	_target_selector.room_roam_min = room_roam_min
 	_target_selector.room_roam_max = room_roam_max
 	_target_selector.roam_pick_min_distance = roam_pick_min_distance
+	_target_selector.roam_obstacle_check_radius = roam_obstacle_check_radius
+	_target_selector.roam_obstacle_collision_mask = roam_obstacle_collision_mask
 
 	_navigator.move_speed = move_speed
 	_navigator.turn_speed = turn_speed
@@ -285,6 +302,8 @@ func _sync_helper_config() -> void:
 	_navigator.explore_wander_jitter = explore_wander_jitter
 	_navigator.room_roam_min = room_roam_min
 	_navigator.room_roam_max = room_roam_max
+	_navigator.play_ball_approach_distance = play_ball_approach_distance
+	_navigator.play_ball_near_obstacle_distance = play_ball_near_obstacle_distance
 	_navigator.model_forward_yaw_offset_degrees = model_forward_yaw_offset_degrees
 
 	_ball_play.pounce_impulse = pounce_impulse
@@ -597,6 +616,35 @@ func _play_attention_animation() -> void:
 
 func _setup_debug_label() -> void:
 	_debug_display.setup(self, show_debug_label)
+
+
+func _setup_navigation_debug_gizmos() -> void:
+	_navigation_debug_enabled = show_navigation_debug_gizmos
+	_navigation_debug_controller = get_node_or_null(navigation_debug_controller_path) as XRController3D
+	_navigation_debug_gizmos.setup(self)
+	_navigation_debug_gizmos.set_enabled(_navigation_debug_enabled)
+
+
+func _update_navigation_debug_toggle() -> void:
+	var controller_pressed: bool = false
+	if _navigation_debug_controller == null:
+		_navigation_debug_controller = get_node_or_null(navigation_debug_controller_path) as XRController3D
+	if _navigation_debug_controller != null and not navigation_debug_toggle_button.is_empty():
+		controller_pressed = _navigation_debug_controller.is_button_pressed(navigation_debug_toggle_button)
+
+	var toggle_pressed: bool = controller_pressed
+	if toggle_pressed and not _navigation_debug_toggle_was_pressed:
+		_navigation_debug_enabled = not _navigation_debug_enabled
+		_navigation_debug_gizmos.set_enabled(_navigation_debug_enabled)
+
+	_navigation_debug_toggle_was_pressed = toggle_pressed
+
+
+func _update_navigation_debug_gizmos() -> void:
+	if not _navigation_debug_enabled:
+		return
+
+	_navigation_debug_gizmos.update(_navigator.debug_snapshot())
 
 
 func _on_needs_changed(snapshot: Dictionary) -> void:
